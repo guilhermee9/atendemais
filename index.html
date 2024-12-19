@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Formulário de Atendimento</title>
+    <link rel="stylesheet" href="style.css">
+    <script>key.html</script>
+    <div id="dynamic-content"></div>
+    <script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-analytics.js"></script>
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyDXqdikaZuQ-g48OvJ6tBFhva_CW4ve3uI",
+            authDomain: "servicos-a3400.firebaseapp.com",
+            projectId: "servicos-a3400",
+            storageBucket: "servicos-a3400.firebasestorage.app",
+            messagingSenderId: "473981038101",
+            appId: "1:473981038101:web:9865c5ca0727656279681c",
+            measurementId: "G-YM2DTC4YM3"
+        };
+        firebase.initializeApp(firebaseConfig)</script>
+</head>
+
+<body>
+    <header>
+        <div class="logo">Seu Logo</div>
+        <div class="menu-icon" onclick="toggleMenu()">&#9776;</div>
+    </header>
+
+    <div class="sidebar" id="mySidebar">
+        <a href="#" onclick="closeMenu()"><span class="menu-icon close-icon">&#9776;</span></a>
+        <a href="#">Ordens de Serviço</a>
+        <a href="#">Consultar</a>
+        <a href="#">Cadastrar Usuário</a>
+    </div>
+
+    <h1 style="text-align: center;">Formulário de Atendimento</h1>
+    <form>
+        <label for="nome">Nome do Cliente:</label>
+        <input type="text" id="nome" name="nome" required>
+
+        <label for="datahora">Data e Hora do Atendimento:</label>
+        <input type="datetime-local" id="datahora" name="datahora" required>
+
+        <label for="problema">Descrição do Problema:</label>
+        <textarea id="problema" name="problema" rows="4" required></textarea>
+
+        <label for="solucao">Solução Apresentada:</label>
+        <textarea id="solucao" name="solucao" rows="4"></textarea>
+
+        <label for="observacoes">Observações:</label>
+        <textarea id="observacoes" name="observacoes" rows="4"></textarea>
+
+        <button type="submit">Enviar</button>
+        <button type="reset">Limpar</button>
+    </form>
+
+    <script>
+        function toggleMenu() {
+            var sidebar = document.getElementById("mySidebar");
+            sidebar.classList.toggle("active");
+        }
+
+        function closeMenu() {
+            var sidebar = document.getElementById("mySidebar");
+            sidebar.classList.remove("active");
+        }
+    </script>
+</body>
+
+</html>
