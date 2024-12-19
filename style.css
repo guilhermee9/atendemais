@@ -1,7 +1,7 @@
 body {
     font-family: Arial, sans-serif;
     margin: 20px;
-    background-image: linear-gradient(to right, #778899, #BEBEBE);
+    background-image: linear-gradient(#a7a7a7, #707070);
 }
 
 form {
@@ -79,4 +79,42 @@ button {
 .close-icon {
     font-size: 24px;
     /* Ajuste o tamanho conforme necessário */
+}
+
+.campo-busca {
+    width: 200px;
+    /* Largura fixa */
+    max-width: 90%;
+    /* Largura máxima em relação ao contêiner pai */
+}
+
+#resultados {
+    margin-top: 20px;
+    border: 1px solid #ccc;
+    padding: 10px;
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+.resultado-item {
+    margin-bottom: 10px;
+    border: 1px solid #ddd;
+    padding: 5px;
+}
+
+.meio {
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+#ordens-lista {
+    margin-top: 20px;
+}
+
+.ordem-item {
+    border: 1px solid #ccc;
+    margin-bottom: 10px;
+    padding: 10px;
+    cursor: pointer;
+    /* Indica que é clicável */
 }

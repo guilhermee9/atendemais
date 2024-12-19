@@ -20,32 +20,32 @@
     <div class="sidebar" id="mySidebar">
         <a href="#" onclick="closeMenu()"><span class="menu-icon close-icon">&#9776;</span></a>
         <a href="#">Ordens de Serviço</a>
-        <a href="#">Consultar</a>
-        <a href="#">Cadastrar Usuário</a>
+        <a href="busca.html">Consultar</a>
+        <a href="cadastro.html">Cadastrar Usuário</a>
     </div>
 
     <h1 style="text-align: center;">Formulário de Atendimento</h1>
     <form id="formularioAtendimento">
-        <label for="nome">Nome do Cliente:</label>
-        <input type="text" id="nome" name="nome" required>
-
-        <label for="datahora">Data e Hora do Atendimento:</label>
-        <input type="datetime-local" id="datahora" name="datahora" required>
-
-        <label for="problema">Descrição do Problema:</label>
-        <textarea id="problema" name="problema" rows="4" required></textarea>
-
-        <label for="solucao">Solução Apresentada:</label>
-        <textarea id="solucao" name="solucao" rows="4"></textarea>
-
-        <label for="observacoes">Observações:</label>
-        <textarea id="observacoes" name="observacoes" rows="4"></textarea>
-
+        <input type="text" id="nome" name="nome" placeholder="Nome" required>
+        <input type="date" id="datahora" name="datahora" placeholder="Data" required>
+        <textarea id="problema" name="problema" rows="4" required placeholder="Problema"></textarea>
+        <textarea id="solucao" name="solucao" rows="4" placeholder="Solução"></textarea>
+        <textarea id="observacoes" name="observacoes" rows="4" placeholder="Observações"></textarea>
         <button type="submit">Enviar</button>
         <button type="reset">Limpar</button>
     </form>
 
     <script>
+        function toggleMenu() {
+            var sidebar = document.getElementById("mySidebar");
+            sidebar.classList.toggle("active");
+        }
+
+        function closeMenu() {
+            var sidebar = document.getElementById("mySidebar");
+            sidebar.classList.remove("active");
+        }
+
         const formulario = document.getElementById('formularioAtendimento');
 
         formulario.addEventListener('submit', (event) => {

@@ -7,6 +7,7 @@
     <script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore-compat.js"></script>
     <script src="firebase-config.js" defer></script>
+
 </head>
 
 <body>
@@ -20,92 +21,103 @@
     <div class="sidebar" id="mySidebar">
         <a href="#" onclick="closeMenu()"><span class="menu-icon close-icon">&#9776;</span></a>
         <a href="#">Ordens de Serviço</a>
-        <a href="#">Consultar</a>
-        <a href="#">Cadastrar Usuário</a>
+        <a href="busca.html">Consultar</a>
+        <a href="cadastro.html">Cadastrar Usuário</a>
     </div>
-
-    <h2>Buscar Atendimentos</h2>
-    <input type="text" id="buscaNome" placeholder="Buscar por nome">
-    <input type="date" id="buscaData">
-    <button onclick="buscarAtendimentos()">Buscar</button>
+    <div class="meio">
+        <h1 style="text-align: center;">Buscar Atendimentos</h1>
+        <input type="text" id="buscaNome" placeholder="Buscar por nome" maxlength="50">
+        <input type="date" id="buscaData">
+        <button onclick="buscarAtendimentos()">Buscar</button>
+        <br>
+    </div>
 
     <div id="resultados"></div>
 
     <script>
-
         const formulario = document.getElementById('formularioAtendimento');
+        const resultadosDiv = document.getElementById('resultados');
+
+        formulario.addEventListener('submit', (event) => {
+            event.preventDefault();
+
+            const nome = document.getElementById('nome').value;
+            const data = document.getElementById('data').value;
+            const problema = document.getElementById('problema').value;
+            const solucao = document.getElementById('solucao').value;
+            const observacoes = document.getElementById('observacoes').value;
+
+            db.collection("atendimentos").add({
+                nome: nome,
+                data: data,
+                problema: problema,
+                solucao: solucao,
+                observacoes: observacoes
+            })
+                .then(() => {
+                    alert("Dados enviados com sucesso!");
+                    formulario.reset();
+                })
+                .catch((error) => {
+                    console.error("Erro ao enviar dados: ", error);
+                    alert("Erro ao enviar dados. Consulte o console.");
+                });
+        });
 
         function buscarAtendimentos() {
             const nomeBusca = document.getElementById('buscaNome').value.toLowerCase();
             const dataBusca = document.getElementById('buscaData').value;
 
-            let nomeQuery = null;
-            let dataQuery = null;
-            let queries = [];
-
-            if (nomeBusca) {
-                nomeQuery = db.collection("atendimentos").where("nome", ">=", nomeBusca).where("nome", "<=", nomeBusca + "\uf8ff");
-                queries.push(nomeQuery);
-            }
-
-            if (dataBusca) {
-                const dataInicio = new Date(dataBusca);
-                dataInicio.setHours(0, 0, 0, 0);
-                const dataFim = new Date(dataBusca);
-                dataFim.setHours(23, 59, 59, 999);
-                dataQuery = db.collection("atendimentos").where("datahora", ">=", dataInicio.toISOString()).where("datahora", "<=", dataFim.toISOString());
-                queries.push(dataQuery);
-            }
-
             resultadosDiv.innerHTML = "";
 
-            if (queries.length === 0) {
+            let results = [];
+
+            const nomeQuery = nomeBusca ? db.collection("atendimentos")
+                .where("nome", ">=", nomeBusca)
+                .where("nome", "<=", nomeBusca + "\uf8ff") : null;
+
+            const dataQuery = dataBusca ? db.collection("atendimentos").where("data", "==", dataBusca) : null;
+
+            const promises = [];
+            if (nomeQuery) promises.push(nomeQuery.get());
+            if (dataQuery) promises.push(dataQuery.get());
+
+            if (promises.length === 0) {
                 resultadosDiv.innerHTML = "<p>Nenhum critério de busca fornecido.</p>";
                 return;
             }
 
-            Promise.all(queries.map(query => query.get()))
-                .then(snapshots => {
-                    let results = new Set();
-
-                    snapshots.forEach(snapshot => {
-                        if (!snapshot.empty) {
-                            snapshot.forEach(doc => {
-                                results.add(doc.id);
-                            });
-                        }
-                    });
-                    if (results.size === 0) {
-                        resultadosDiv.innerHTML = "<p>Nenhum resultado encontrado.</p>";
-                    } else {
-                        results.forEach(docId => {
-                            db.collection("atendimentos").doc(docId).get().then((doc) => {
-                                if (doc.exists) {
-                                    const data = doc.data();
-                                    const resultadoItem = document.createElement('div');
-                                    resultadoItem.classList.add('resultado-item');
-                                    resultadoItem.innerHTML = `
-                                        <p><strong>Nome:</strong> ${data.nome}</p>
-                                        <p><strong>Data/Hora:</strong> ${new Date(data.datahora).toLocaleString()}</p>
-                                        <p><strong>Problema:</strong> ${data.problema}</p>
-                                        <p><strong>Solução:</strong> ${data.solucao || "Não informada"}</p>
-                                        <p><strong>Observações:</strong> ${data.observacoes || "Não informadas"}</p>
-                                    `;
-                                    resultadosDiv.appendChild(resultadoItem);
-                                } else {
-                                    console.log("No such document!");
-                                }
-                            }).catch((error) => {
-                                console.log("Error getting document:", error);
-                            });
-                        })
+            Promise.all(promises).then(snapshots => {
+                snapshots.forEach(snapshot => {
+                    if (!snapshot.empty) {
+                        snapshot.forEach(doc => {
+                            if (!results.some(r => r.id === doc.id)) {
+                                results.push({ id: doc.id, data: doc.data() });
+                            }
+                        });
                     }
-
-                })
-                .catch(error => {
-                    console.error("Erro nas buscas: ", error);
-                    resultadosDiv.innerHTML = "<p>Erro nas buscas. Consulte o console.</p>";
                 });
+
+                if (results.length === 0) {
+                    resultadosDiv.innerHTML = "<p>Nenhum resultado encontrado.</p>";
+                } else {
+                    results.forEach(result => {
+                        const resultadoItem = document.createElement('div');
+                        resultadoItem.classList.add('resultado-item');
+                        resultadoItem.innerHTML = `
+                            <p><strong>Nome:</strong> ${result.data.nome}</p>
+                            <p><strong>Data:</strong> ${result.data.data}</p>
+                            <p><strong>Problema:</strong> ${result.data.problema}</p>
+                            <p><strong>Solução:</strong> ${result.data.solucao || "Não informada"}</p>
+                            <p><strong>Observações:</strong> ${result.data.observacoes || "Não informadas"}</p>
+                        `;
+                        resultadosDiv.appendChild(resultadoItem);
+                    });
+                }
+            }).catch(error => {
+                console.error("Erro nas buscas: ", error);
+                resultadosDiv.innerHTML = "<p>Erro nas buscas. Consulte o console.</p>";
+            });
         }
 
         function toggleMenu() {
@@ -117,6 +129,7 @@
             var sidebar = document.getElementById("mySidebar");
             sidebar.classList.remove("active");
         }
+
     </script>
 </body>
 
