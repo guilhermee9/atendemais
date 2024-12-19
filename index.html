@@ -4,21 +4,9 @@
 <head>
     <title>Formulário de Atendimento</title>
     <link rel="stylesheet" href="style.css">
-    <script>key.html</script>
-    <div id="dynamic-content"></div>
-    <script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-analytics.js"></script>
-    <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyDXqdikaZuQ-g48OvJ6tBFhva_CW4ve3uI",
-            authDomain: "servicos-a3400.firebaseapp.com",
-            projectId: "servicos-a3400",
-            storageBucket: "servicos-a3400.firebasestorage.app",
-            messagingSenderId: "473981038101",
-            appId: "1:473981038101:web:9865c5ca0727656279681c",
-            measurementId: "G-YM2DTC4YM3"
-        };
-        firebase.initializeApp(firebaseConfig)</script>
+    <script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js" defer></script>
 </head>
 
 <body>
@@ -35,7 +23,7 @@
     </div>
 
     <h1 style="text-align: center;">Formulário de Atendimento</h1>
-    <form>
+    <form id="formularioAtendimento">
         <label for="nome">Nome do Cliente:</label>
         <input type="text" id="nome" name="nome" required>
 
@@ -56,6 +44,34 @@
     </form>
 
     <script>
+        const formulario = document.getElementById('formularioAtendimento');
+
+        formulario.addEventListener('submit', (event) => {
+            event.preventDefault(); // Impede o envio padrão do formulário
+
+            const nome = document.getElementById('nome').value;
+            const datahora = document.getElementById('datahora').value;
+            const problema = document.getElementById('problema').value;
+            const solucao = document.getElementById('solucao').value;
+            const observacoes = document.getElementById('observacoes').value;
+
+            db.collection("atendimentos").add({ // Coleção no Firestore
+                nome: nome,
+                datahora: datahora,
+                problema: problema,
+                solucao: solucao,
+                observacoes: observacoes
+            })
+                .then(() => {
+                    alert("Dados enviados com sucesso!");
+                    formulario.reset(); // Limpa o formulário após o envio
+                })
+                .catch((error) => {
+                    console.error("Erro ao enviar dados: ", error);
+                    alert("Erro ao enviar dados. Consulte o console.");
+                });
+        });
+
         function toggleMenu() {
             var sidebar = document.getElementById("mySidebar");
             sidebar.classList.toggle("active");
