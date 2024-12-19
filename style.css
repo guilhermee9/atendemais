@@ -65,6 +65,11 @@ button {
     /* Centraliza o logo */
 }
 
+.logo img {
+    width: 200px;
+    height: auto;
+}
+
 .menu-icon {
     /* ... seus estilos existentes ... */
     z-index: 2;

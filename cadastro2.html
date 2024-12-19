@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Formulário de Atendimento</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js" defer></script>
+</head>
+
+<body>
+    <header>
+        <div class="logo">
+            <img src="/img/logo.png" alt="Seu Logo">
+        </div>
+        <div class="menu-icon" onclick="toggleMenu()">&#9776;</div>
+    </header>
+
+    <div class="sidebar" id="mySidebar">
+        <a href="#" onclick="closeMenu()"><span class="menu-icon close-icon">&#9776;</span></a>
+        <a href="#">Ordens de Serviço</a>
+        <a href="#">Consultar</a>
+        <a href="#">Cadastrar Usuário</a>
+    </div>
+
+    <h1 style="text-align: center;">Formulário de Atendimento</h1>
+    <form id="formularioAtendimento">
+        <label for="nome">Nome do Cliente:</label>
+        <input type="text" id="nome" name="nome" required>
+
+        <label for="data">Data do Atendimento:</label>
+        <input type="date" id="data" name="data" required>
+
+        <label for="problema">Descrição do Problema:</label>
+        <textarea id="problema" name="problema" rows="4" required></textarea>
+
+        <label for="solucao">Solução Apresentada:</label>
+        <textarea id="solucao" name="solucao" rows="4"></textarea>
+
+        <label for="observacoes">Observações:</label>
+        <textarea id="observacoes" name="observacoes" rows="4"></textarea>
+
+        <button type="submit">Enviar</button>
+        <button type="reset">Limpar</button>
+    </form>
+
+    <h2>Buscar Atendimentos</h2>
+    <input type="text" id="buscaNome" placeholder="Buscar por nome">
+    <input type="date" id="buscaData">
+    <button onclick="buscarAtendimentos()">Buscar</button>
+
+    <div id="resultados"></div>
+
+    <script>
+        const formulario = document.getElementById('formularioAtendimento');
+        const resultadosDiv = document.getElementById('resultados');
+
+        formulario.addEventListener('submit', (event) => {
+            event.preventDefault();
+
+            const nome = document.getElementById('nome').value;
+            const data = document.getElementById('data').value; // Obtém apenas a data
+            const problema = document.getElementById('problema').value;
+            const solucao = document.getElementById('solucao').value;
+            const observacoes = document.getElementById('observacoes').value;
+
+            db.collection("atendimentos").add({
+                nome: nome,
+                data: data, // Salva apenas a data no Firestore
+                problema: problema,
+                solucao: solucao,
+                observacoes: observacoes
+            })
+                .then(() => {
+                    alert("Dados enviados com sucesso!");
+                    formulario.reset();
+                })
+                .catch((error) => {
+                    console.error("Erro ao enviar dados: ", error);
+                    alert("Erro ao enviar dados. Consulte o console.");
+                });
+        });
+
+        function buscarAtendimentos() {
+            const nomeBusca = document.getElementById('buscaNome').value.toLowerCase();
+            const dataBusca = document.getElementById('buscaData').value;
+
+            let nomeQuery = null;
+            let dataQuery = null;
+            let queries = [];
+
+            if (nomeBusca) {
+                nomeQuery = db.collection("atendimentos").where("nome", ">=", nomeBusca).where("nome", "<=", nomeBusca + "\uf8ff");
+                queries.push(nomeQuery);
+            }
+
+            if (dataBusca) {
+                dataQuery = db.collection("atendimentos").where("data", "==", dataBusca);
+                queries.push(dataQuery);
+            }
+
+            resultadosDiv.innerHTML = "";
+
+            if (queries.length === 0) {
+                resultadosDiv.innerHTML = "<p>Nenhum critério de busca fornecido.</p>";
+                return;
+            }
+
+            Promise.all(queries.map(query => query.get()))
+                .then(snapshots => {
+                    let results = new Set();
+
+                    snapshots.forEach(snapshot => {
+                        if (!snapshot.empty) {
+                            snapshot.forEach(doc => {
+                                results.add(doc.id);
+                            });
+                        }
+                    });
+                    if (results.size === 0) {
+                        resultadosDiv.innerHTML = "<p>Nenhum resultado encontrado.</p>";
+                    } else {
+                        results.forEach(docId => {
+                            db.collection("atendimentos").doc(docId).get().then((doc) => {
+                                if (doc.exists) {
+                                    const data = doc.data();
+                                    const resultadoItem = document.createElement('div');
+                                    resultadoItem.classList.add('resultado-item');
+                                    resultadoItem.innerHTML = `
+                                        <p><strong>Nome:</strong> ${data.nome}</p>
+                                        <p><strong>Data:</strong> ${data.data}</p>
+                                        <p><strong>Problema:</strong> ${data.problema}</p>
+                                        <p><strong>Solução:</strong> ${data.solucao || "Não informada"}</p>
+                                        <p><strong>Observações:</strong> ${data.observacoes || "Não informadas"}</p>
+                                    `;
+                                    resultadosDiv.appendChild(resultadoItem);
+                                } else {
+                                    console.log("No such document!");
+                                }
+                            }).catch((error) => {
+                                console.log("Error getting document:", error);
+                            });
+                        })
+                    }
+
+                })
+                .catch(error => {
+                    console.error("Erro nas buscas: ", error);
+                    resultadosDiv.innerHTML = "<p>Erro nas buscas. Consulte o console.</p>";
+                });
+        }
+
+
+        function toggleMenu() {
+            var sidebar = document.getElementById("mySidebar");
+            sidebar.classList.toggle("active");
+        }
+
+        function closeMenu() {
+            var sidebar = document.getElementById("mySidebar");
+            sidebar.classList.remove("active");
+        }
+    </script>
+</body>
+
+</html>
