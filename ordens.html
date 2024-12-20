@@ -2,12 +2,11 @@
 <html>
 
 <head>
-    <title>Ordens de Atendimento</title>
-    <link rel="stylesheet" href="style.css">
     <script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore-compat.js"></script>
     <script src="firebase-config.js" defer></script>
-
+    <title>Ordens de Atendimento</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
@@ -19,48 +18,70 @@
     </header>
     <div class="sidebar" id="mySidebar">
         <a href="#" onclick="closeMenu()"><span class="menu-icon close-icon">&#9776;</span></a>
-        <a href="#">Ordens de Serviço</a>
+        <a href="ordens.html">Ordens de Serviço</a>
         <a href="busca.html">Consultar</a>
-        <a href="cadastro.html">Cadastrar Usuário</a>
-    </div>
-    <div class="meio">
-        <h1 style="text-align: center;">Buscar Atendimentos</h1>
-        <input type="text" id="buscaNome" placeholder="Buscar por nome" maxlength="50">
-        <input type="date" id="buscaData">
-        <button onclick="buscarAtendimentos()">Buscar</button>
-        <br>
-
-        <h1>Ordens de Atendimento</h1>
-        <div id="ordens-lista"></div>
+        <a href="cadastro.html">Criar atendimento</a>
     </div>
 
     <script>
-        const ordensLista = document.getElementById('ordens-lista');
+        function toggleMenu() {
+            var sidebar = document.getElementById("mySidebar");
+            sidebar.classList.toggle("active");
+        }
 
-        db.collection("atendimentos")
-            .orderBy("data") // Ordena pela data (do mais antigo para o mais novo)
-            .get()
-            .then((querySnapshot) => {
-                querySnapshot.forEach((doc) => {
-                    const ordem = doc.data();
-                    const ordemItem = document.createElement('div');
-                    ordemItem.classList.add('ordem-item');
-                    ordemItem.innerHTML = `
-                        <p><strong>Nome:</strong> ${ordem.nome}</p>
-                        <p><strong>Data:</strong> ${ordem.data}</p>
-                    `;
-                    ordemItem.addEventListener('click', () => {
-                        // Redireciona para a página de detalhes, passando o ID do documento
-                        window.location.href = `detalhes.html?id=${doc.id}`;
-                    });
-                    ordensLista.appendChild(ordemItem);
-                });
-            })
-            .catch((error) => {
-                console.error("Erro ao buscar ordens: ", error);
-                ordensLista.innerHTML = "<p>Erro ao buscar ordens. Consulte o console.</p>";
-            });
+        function closeMenu() {
+            var sidebar = document.getElementById("mySidebar");
+            sidebar.classList.remove("active");
+        }
     </script>
+
+    <div class="meio">
+        <h1>Ordens de Atendimento</h1>
+        <div id="resultados"></div>
+    </div>
+    <script type="module">
+        const resultadosDiv = document.getElementById('resultados');
+
+        function buscarAtendimentos() {
+            resultadosDiv.innerHTML = ""; // Limpa resultados anteriores
+
+            db.collection("atendimentos")
+                .orderBy("id", "desc")
+                .limit(10)
+                .get()
+                .then((querySnapshot) => {
+                    if (querySnapshot.empty) {
+                        resultadosDiv.innerHTML = "<p>Nenhuma ordem encontrada.</p>";
+                        return;
+                    }
+
+                    querySnapshot.forEach((doc) => {
+                        const atendimento = doc.data();
+                        const resultadoItem = document.createElement('div');
+                        resultadoItem.classList.add('resultado-item');
+                        resultadoItem.innerHTML = `
+                  <p><strong>ID:</strong> ${atendimento.id}</p> <p><strong>Nome:</strong> ${atendimento.nome}</p>
+                  <p><strong>Data:</strong> ${atendimento.data}</p>
+                  <p><strong>Problema:</strong> ${atendimento.problema}</p>
+                  <p><strong>Solução:</strong> ${atendimento.solucao || "Não informada"}</p>
+                  <p><strong>Observações:</strong> ${atendimento.observacoes || "Não informadas"}</p>
+                `;
+                        resultadoItem.addEventListener('click', () => {
+                            window.location.href = `detalhes.html?id=${doc.id}`;
+                        });
+                        resultadosDiv.appendChild(resultadoItem);
+                    });
+                })
+                .catch((error) => {
+                    console.error("Erro ao buscar ordens: ", error);
+                    resultadosDiv.innerHTML = "<p>Erro ao buscar ordens. Consulte o console.</p>";
+                });
+        }
+
+        // Chama a função buscarAtendimentos() quando a página carrega
+        window.addEventListener('load', buscarAtendimentos);
+    </script>
+
 </body>
 
 </html>

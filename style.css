@@ -1,7 +1,7 @@
 body {
     font-family: Arial, sans-serif;
     margin: 20px;
-    background-image: linear-gradient(#a7a7a7, #707070);
+    background-color: #b5b8b5;
 }
 
 form {
@@ -44,7 +44,7 @@ button {
     z-index: 1;
     top: 0;
     left: 0;
-    background-color: #CAE1FF;
+    background-color: #9b9b9b;
     overflow-x: hidden;
     transition: 0.5s;
     padding-top: 60px;
@@ -52,8 +52,8 @@ button {
 
 .sidebar a {
     padding: 8px 16px;
-    /* Ajuste o padding conforme necessário */
     display: block;
+    text-decoration: none
 }
 
 .sidebar.active {
@@ -62,7 +62,6 @@ button {
 
 .logo {
     text-align: center;
-    /* Centraliza o logo */
 }
 
 .logo img {
@@ -71,13 +70,11 @@ button {
 }
 
 .menu-icon {
-    /* ... seus estilos existentes ... */
     z-index: 2;
-    /* Garante que o ícone fique acima do menu */
 }
 
 .close-icon {
-    font-size: 24px;
+    font-size: 16px;
     /* Ajuste o tamanho conforme necessário */
 }
 
@@ -117,4 +114,10 @@ button {
     padding: 10px;
     cursor: pointer;
     /* Indica que é clicável */
+}
+
+.resultado-item {
+    border: 1px solid #ccc;
+    margin-bottom: 10px;
+    padding: 10px;
 }

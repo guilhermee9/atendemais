@@ -7,7 +7,6 @@
     <script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore-compat.js"></script>
     <script src="firebase-config.js" defer></script>
-
 </head>
 
 <body>
@@ -20,10 +19,11 @@
 
     <div class="sidebar" id="mySidebar">
         <a href="#" onclick="closeMenu()"><span class="menu-icon close-icon">&#9776;</span></a>
-        <a href="#">Ordens de Serviço</a>
+        <a href="ordens.html">Ordens de Serviço</a>
         <a href="busca.html">Consultar</a>
-        <a href="cadastro.html">Cadastrar Usuário</a>
+        <a href="cadastro.html">Criar atendimento</a>
     </div>
+
     <div class="meio">
         <h1 style="text-align: center;">Buscar Atendimentos</h1>
         <input type="text" id="buscaNome" placeholder="Buscar por nome" maxlength="50">
@@ -33,6 +33,17 @@
     </div>
 
     <div id="resultados"></div>
+    <script>
+        function toggleMenu() {
+            var sidebar = document.getElementById("mySidebar");
+            sidebar.classList.toggle("active");
+        }
+
+        function closeMenu() {
+            var sidebar = document.getElementById("mySidebar");
+            sidebar.classList.remove("active");
+        }
+    </script>
 
     <script>
         const formulario = document.getElementById('formularioAtendimento');
@@ -120,15 +131,7 @@
             });
         }
 
-        function toggleMenu() {
-            var sidebar = document.getElementById("mySidebar");
-            sidebar.classList.toggle("active");
-        }
 
-        function closeMenu() {
-            var sidebar = document.getElementById("mySidebar");
-            sidebar.classList.remove("active");
-        }
 
     </script>
 </body>

@@ -19,9 +19,9 @@
 
     <div class="sidebar" id="mySidebar">
         <a href="#" onclick="closeMenu()"><span class="menu-icon close-icon">&#9776;</span></a>
-        <a href="#">Ordens de Serviço</a>
+        <a href="ordens.html">Ordens de Serviço</a>
         <a href="busca.html">Consultar</a>
-        <a href="cadastro.html">Cadastrar Usuário</a>
+        <a href="cadastro.html">Criar atendimento</a>
     </div>
 
     <h1 style="text-align: center;">Formulário de Atendimento</h1>
@@ -48,32 +48,54 @@
 
         const formulario = document.getElementById('formularioAtendimento');
 
-        formulario.addEventListener('submit', (event) => {
-            event.preventDefault(); // Impede o envio padrão do formulário
+        // Função para obter o próximo ID sequencial
+        async function getNextId() {
+            const counterRef = db.collection('counters').doc('atendimentos_counter');
 
-            const nome = document.getElementById('nome').value;
-            const datahora = document.getElementById('datahora').value;
-            const problema = document.getElementById('problema').value;
-            const solucao = document.getElementById('solucao').value;
-            const observacoes = document.getElementById('observacoes').value;
+            try {
+                const doc = await counterRef.get();
+                if (doc.exists) {
+                    const currentCount = doc.data().count;
+                    await counterRef.update({ count: currentCount + 1 });
+                    return currentCount + 1;
+                } else {
+                    await counterRef.set({ count: 1 });
+                    return 1;
+                }
+            } catch (error) {
+                console.error("Erro ao obter o próximo ID:", error);
+                throw error; // Importante: re-lança o erro
+            }
+        }
 
-            db.collection("atendimentos").add({ // Coleção no Firestore
-                nome: nome,
-                datahora: datahora,
-                problema: problema,
-                solucao: solucao,
-                observacoes: observacoes
-            })
-                .then(() => {
-                    alert("Dados enviados com sucesso!");
-                    formulario.reset(); // Limpa o formulário após o envio
-                })
-                .catch((error) => {
-                    console.error("Erro ao enviar dados: ", error);
-                    alert("Erro ao enviar dados. Consulte o console.");
+        formulario.addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            try {
+                const nextId = await getNextId();
+
+                const nome = document.getElementById('nome').value;
+                const datahora = document.getElementById('datahora').value;
+                const problema = document.getElementById('problema').value;
+                const solucao = document.getElementById('solucao').value;
+                const observacoes = document.getElementById('observacoes').value;
+
+                await db.collection("atendimentos").doc(nextId.toString()).set({
+                    id: nextId,
+                    nome: nome,
+                    datahora: datahora,
+                    problema: problema,
+                    solucao: solucao,
+                    observacoes: observacoes
                 });
-        });
 
+                alert("Dados enviados com sucesso!");
+                formulario.reset();
+            } catch (error) {
+                console.error("Erro ao enviar dados: ", error);
+                alert("Erro ao enviar dados. Consulte o console.");
+            }
+        });
 
     </script>
 </body>
