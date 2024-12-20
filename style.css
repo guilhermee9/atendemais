@@ -1,11 +1,18 @@
 body {
     font-family: Arial, sans-serif;
     margin: 20px;
-    background-color: #b5b8b5;
+    background-color: #9c9c9c;
+}
+
+.titulo {
+    text-align: center;
+    font-size: 2rem;
+    color: #333;
+    margin-top: 20px;
 }
 
 form {
-    max-width: 400px;
+    max-width: 80%;
     margin: 0 auto;
 }
 
@@ -18,7 +25,7 @@ input,
 textarea {
     width: 100%;
     padding: 10px;
-    margin-bottom: 15px;
+    margin-bottom: 30px;
     border: 1px solid #ccc;
     border-radius: 4px;
 }
@@ -89,7 +96,7 @@ button {
     margin-top: 20px;
     border: 1px solid #ccc;
     padding: 10px;
-    max-width: 400px;
+    max-width: 80%;
     margin: 0 auto;
 }
 
@@ -100,7 +107,7 @@ button {
 }
 
 .meio {
-    max-width: 400px;
+    max-width: 80%;
     margin: 0 auto;
 }
 
@@ -120,4 +127,51 @@ button {
     border: 1px solid #ccc;
     margin-bottom: 10px;
     padding: 10px;
+}
+
+.resultado-item {
+    border: 1px solid #ccc;
+    margin-bottom: 10px;
+    padding: 10px;
+    cursor: pointer;
+}
+
+.modal {
+    display: none;
+    /* Hidden by default */
+    position: fixed;
+    /* Stay in place */
+    z-index: 1;
+    /* Sit on top */
+    left: 0;
+    top: 0;
+    width: 100%;
+    /* Full width */
+    height: 100%;
+    /* Full height */
+    overflow: auto;
+    /* Enable scroll if needed */
+    background-color: rgb(0, 0, 0);
+    /* Fallback color */
+    background-color: rgba(0, 0, 0, 0.4);
+    /* Black w/ opacity */
+}
+
+.modal-content {
+    background-color: #b4b4b4;
+    margin: 15% auto;
+    /* 15% from the top and centered */
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%;
+    /* Could be more or less, depending on screen size */
+    max-width: 500px;
+}
+
+.close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
 }

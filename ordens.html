@@ -2,17 +2,19 @@
 <html>
 
 <head>
+    <title>Ordens de Serviço</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore-compat.js"></script>
     <script src="firebase-config.js" defer></script>
-    <title>Ordens de Atendimento</title>
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
     <header>
         <div class="logo">
-            <img src="/img/logo.png" alt="Seu Logo">
+            <img src="/img/logo2.png" alt="Seu Logo">
         </div>
         <div class="menu-icon" onclick="toggleMenu()">&#9776;</div>
     </header>
@@ -35,15 +37,33 @@
         }
     </script>
 
-    <div class="meio">
-        <h1>Ordens de Atendimento</h1>
-        <div id="resultados"></div>
+    <h1 class="titulo">Ordens de Atendimento</h1>
+    <div id="resultados"></div>
+    <div id="meuModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <div id="modal-detalhes"></div>
+        </div>
     </div>
     <script type="module">
+
         const resultadosDiv = document.getElementById('resultados');
+        const modal = document.getElementById("meuModal");
+        const modalDetalhes = document.getElementById("modal-detalhes");
+        const span = document.getElementsByClassName("close")[0];
+
+        span.onclick = function () {
+            modal.style.display = "none";
+        }
+
+        window.onclick = function (event) {
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
+        }
 
         function buscarAtendimentos() {
-            resultadosDiv.innerHTML = ""; // Limpa resultados anteriores
+            resultadosDiv.innerHTML = "";
 
             db.collection("atendimentos")
                 .orderBy("id", "desc")
@@ -57,18 +77,36 @@
 
                     querySnapshot.forEach((doc) => {
                         const atendimento = doc.data();
+                        let dataFormatada = "";
+
+                        if (atendimento.data) {
+                            if (atendimento.data instanceof firebase.firestore.Timestamp) {
+                                dataFormatada = atendimento.data.toDate().toLocaleDateString('pt-BR');
+                            } else if (typeof atendimento.data === 'string') {
+                                try {
+                                    const dataObj = new Date(atendimento.data);
+                                    dataFormatada = dataObj.toLocaleDateString('pt-BR');
+                                } catch (error) {
+                                    console.error("Erro ao converter string para data:", error);
+                                    dataFormatada = "Data inválida";
+                                }
+                            } else {
+                                dataFormatada = "Formato de data desconhecido";
+                            }
+                        }
+
                         const resultadoItem = document.createElement('div');
                         resultadoItem.classList.add('resultado-item');
                         resultadoItem.innerHTML = `
-                  <p><strong>ID:</strong> ${atendimento.id}</p> <p><strong>Nome:</strong> ${atendimento.nome}</p>
-                  <p><strong>Data:</strong> ${atendimento.data}</p>
-                  <p><strong>Problema:</strong> ${atendimento.problema}</p>
-                  <p><strong>Solução:</strong> ${atendimento.solucao || "Não informada"}</p>
-                  <p><strong>Observações:</strong> ${atendimento.observacoes || "Não informadas"}</p>
+                    <p><strong>ID:</strong> ${atendimento.id}</p>
+                    <p><strong>Nome:</strong> ${atendimento.nome}</p>
+                    <p><strong>Data:</strong> ${dataFormatada || "Não informada"}</p>
                 `;
+
                         resultadoItem.addEventListener('click', () => {
-                            window.location.href = `detalhes.html?id=${doc.id}`;
+                            exibirDetalhes(doc);
                         });
+
                         resultadosDiv.appendChild(resultadoItem);
                     });
                 })
@@ -78,7 +116,40 @@
                 });
         }
 
-        // Chama a função buscarAtendimentos() quando a página carrega
+        function exibirDetalhes(doc) {
+            const atendimento = doc.data();
+            modalDetalhes.innerHTML = "";
+
+            let dataFormatada = "";
+            if (atendimento.data) {
+                if (atendimento.data instanceof firebase.firestore.Timestamp) {
+                    dataFormatada = atendimento.data.toDate().toLocaleDateString('pt-BR'); // Formatação para pt-BR (DD/MM/AAAA)
+                } else if (typeof atendimento.data === 'string') {
+                    try {
+                        const dataObj = new Date(atendimento.data);
+                        dataFormatada = dataObj.toLocaleDateString('pt-BR');
+                    } catch (error) {
+                        console.error("Erro ao converter string para data:", error);
+                        dataFormatada = "Data inválida";
+                    }
+                } else {
+                    dataFormatada = "Formato de data desconhecido";
+                }
+            }
+
+            modalDetalhes.innerHTML = `
+        <p><strong>ID do documento:</strong> ${doc.id}</p>
+        <p><strong>ID:</strong> ${atendimento.id || "Não informado"}</p>
+        <p><strong>Nome:</strong> ${atendimento.nome || "Não informado"}</p>
+        <p><strong>Data:</strong> ${dataFormatada || "Não informada"}</p>
+        <p><strong>Problema:</strong> ${atendimento.problema || "Não informado"}</p>
+        <p><strong>Solução:</strong> ${atendimento.solucao || "Não informada"}</p>
+        <p><strong>Observações:</strong> ${atendimento.observacoes || "Não informadas"}</p>
+    `;
+
+            modal.style.display = "block"; // Exibe o modal
+        }
+
         window.addEventListener('load', buscarAtendimentos);
     </script>
 

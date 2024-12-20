@@ -3,6 +3,8 @@
 
 <head>
     <title>Formulário de Atendimento</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="style.css">
     <script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore-compat.js"></script>
@@ -12,7 +14,7 @@
 <body>
     <header>
         <div class="logo">
-            <img src="/img/logo.png" alt="Seu Logo">
+            <img src="/img/logo2.png" alt="Seu Logo">
         </div>
         <div class="menu-icon" onclick="toggleMenu()">&#9776;</div>
     </header>
@@ -23,11 +25,11 @@
         <a href="busca.html">Consultar</a>
         <a href="cadastro.html">Criar atendimento</a>
     </div>
-
-    <h1 style="text-align: center;">Formulário de Atendimento</h1>
+    <h1 class="titulo">Formulário de Atendimento</h1>
+    <h1 style="text-align: center;"></h1>
     <form id="formularioAtendimento">
         <input type="text" id="nome" name="nome" placeholder="Nome" required>
-        <input type="date" id="datahora" name="datahora" placeholder="Data" required>
+        <input type="date" id="data" name="data" placeholder="Data" required>
         <textarea id="problema" name="problema" rows="4" required placeholder="Problema"></textarea>
         <textarea id="solucao" name="solucao" rows="4" placeholder="Solução"></textarea>
         <textarea id="observacoes" name="observacoes" rows="4" placeholder="Observações"></textarea>
@@ -45,6 +47,10 @@
             var sidebar = document.getElementById("mySidebar");
             sidebar.classList.remove("active");
         }
+    </script>
+
+    <script>
+
 
         const formulario = document.getElementById('formularioAtendimento');
 
@@ -75,7 +81,7 @@
                 const nextId = await getNextId();
 
                 const nome = document.getElementById('nome').value;
-                const datahora = document.getElementById('datahora').value;
+                const data = document.getElementById('data').value;
                 const problema = document.getElementById('problema').value;
                 const solucao = document.getElementById('solucao').value;
                 const observacoes = document.getElementById('observacoes').value;
@@ -83,7 +89,7 @@
                 await db.collection("atendimentos").doc(nextId.toString()).set({
                     id: nextId,
                     nome: nome,
-                    datahora: datahora,
+                    data: data,
                     problema: problema,
                     solucao: solucao,
                     observacoes: observacoes

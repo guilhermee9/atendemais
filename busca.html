@@ -2,8 +2,13 @@
 <html>
 
 <head>
-    <title>Formulário de Atendimento</title>
+    <title>Buscar Atendimento</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
+    <script
+        src="https://cdnjs.cloudflare.com/ajax/libs/moment-timezone/0.5.43/moment-timezone-with-data-10-year-range.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore-compat.js"></script>
     <script src="firebase-config.js" defer></script>
@@ -12,7 +17,7 @@
 <body>
     <header>
         <div class="logo">
-            <img src="/img/logo.png" alt="Seu Logo">
+            <img src="/img/logo2.png" alt="Seu Logo">
         </div>
         <div class="menu-icon" onclick="toggleMenu()">&#9776;</div>
     </header>
@@ -25,11 +30,18 @@
     </div>
 
     <div class="meio">
-        <h1 style="text-align: center;">Buscar Atendimentos</h1>
+        <h1 class="titulo">Buscar Atendimentos</h1>
         <input type="text" id="buscaNome" placeholder="Buscar por nome" maxlength="50">
         <input type="date" id="buscaData">
         <button onclick="buscarAtendimentos()">Buscar</button>
         <br>
+    </div>
+
+    <div id="meuModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <div id="modal-detalhes"></div>
+        </div>
     </div>
 
     <div id="resultados"></div>
@@ -46,34 +58,64 @@
     </script>
 
     <script>
-        const formulario = document.getElementById('formularioAtendimento');
+
         const resultadosDiv = document.getElementById('resultados');
+        const modal = document.getElementById("meuModal");
+        const modalDetalhes = document.getElementById("modal-detalhes");
+        const span = document.getElementsByClassName("close")[0];
 
-        formulario.addEventListener('submit', (event) => {
-            event.preventDefault();
+        span.onclick = function () {
+            modal.style.display = "none";
+        }
 
-            const nome = document.getElementById('nome').value;
-            const data = document.getElementById('data').value;
-            const problema = document.getElementById('problema').value;
-            const solucao = document.getElementById('solucao').value;
-            const observacoes = document.getElementById('observacoes').value;
+        window.onclick = function (event) {
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
+        }
 
-            db.collection("atendimentos").add({
-                nome: nome,
-                data: data,
-                problema: problema,
-                solucao: solucao,
-                observacoes: observacoes
-            })
-                .then(() => {
-                    alert("Dados enviados com sucesso!");
-                    formulario.reset();
-                })
-                .catch((error) => {
-                    console.error("Erro ao enviar dados: ", error);
-                    alert("Erro ao enviar dados. Consulte o console.");
+        function exibirDetalhes(id) {
+            modalDetalhes.innerHTML = "";
+
+            db.collection("atendimentos").doc(id).get()
+                .then(doc => {
+                    if (doc.exists) {
+                        const atendimento = doc.data();
+                        let dataFormatada = "";
+                        if (atendimento.data) {
+                            if (atendimento.data instanceof firebase.firestore.Timestamp) {
+                                dataFormatada = atendimento.data.toDate().toLocaleDateString('pt-BR');
+                            } else if (typeof atendimento.data === 'string') {
+                                try {
+                                    const dataObj = new Date(atendimento.data);
+                                    dataFormatada = dataObj.toLocaleDateString('pt-BR');
+                                } catch (error) {
+                                    console.error("Erro ao converter string para data:", error);
+                                    dataFormatada = "Data inválida";
+                                }
+                            } else {
+                                dataFormatada = "Formato de data desconhecido";
+                            }
+                        }
+                        modalDetalhes.innerHTML = `
+                    <p><strong>ID:</strong> ${atendimento.id}</p>
+                    <p><strong>Nome:</strong> ${atendimento.nome || "Não informado"}</p>
+                    <p><strong>Data:</strong> ${dataFormatada || "Não informada"}</p>
+                    <p><strong>Problema:</strong> ${atendimento.problema || "Não informado"}</p>
+                    <p><strong>Solução:</strong> ${atendimento.solucao || "Não informada"}</p>
+                    <p><strong>Observações:</strong> ${atendimento.observacoes || "Não informadas"}</p>
+                `;
+                        modal.style.display = "block";
+                    } else {
+                        modalDetalhes.innerHTML = "<p>Atendimento não encontrado.</p>";
+                        modal.style.display = "block";
+                    }
+                }).catch(error => {
+                    console.error("Erro ao buscar detalhes:", error);
+                    modalDetalhes.innerHTML = "<p>Erro ao buscar detalhes.</p>";
+                    modal.style.display = "block";
                 });
-        });
+        }
 
         function buscarAtendimentos() {
             const nomeBusca = document.getElementById('buscaNome').value.toLowerCase();
@@ -113,15 +155,30 @@
                     resultadosDiv.innerHTML = "<p>Nenhum resultado encontrado.</p>";
                 } else {
                     results.forEach(result => {
+
+                        let dataFormatada = "";
+                        if (result.data.data) {
+                            if (result.data.data instanceof firebase.firestore.Timestamp) {
+                                dataFormatada = moment.tz(result.data.data.toDate(), "America/Sao_Paulo").format('DD/MM/YYYY'); // Usando moment-timezone
+                            } else if (typeof result.data.data === 'string') {
+                                try {
+                                    dataFormatada = moment.tz(result.data.data, "America/Sao_Paulo").format('DD/MM/YYYY');
+                                } catch (error) {
+                                    console.error("Erro ao converter string para data:", error);
+                                    dataFormatada = "Data inválida";
+                                }
+                            } else {
+                                dataFormatada = "Formato de data desconhecido";
+                            }
+                        }
                         const resultadoItem = document.createElement('div');
                         resultadoItem.classList.add('resultado-item');
                         resultadoItem.innerHTML = `
-                            <p><strong>Nome:</strong> ${result.data.nome}</p>
-                            <p><strong>Data:</strong> ${result.data.data}</p>
-                            <p><strong>Problema:</strong> ${result.data.problema}</p>
-                            <p><strong>Solução:</strong> ${result.data.solucao || "Não informada"}</p>
-                            <p><strong>Observações:</strong> ${result.data.observacoes || "Não informadas"}</p>
-                        `;
+                    <p><strong>ID:</strong> ${result.id}</p>
+                    <p><strong>Nome:</strong> ${result.data.nome}</p>
+                    <p><strong>Data:</strong> ${dataFormatada || "Não informada"}</p>
+                `;
+                        resultadoItem.addEventListener('click', () => exibirDetalhes(result.id));
                         resultadosDiv.appendChild(resultadoItem);
                     });
                 }
