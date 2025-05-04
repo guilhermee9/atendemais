@@ -100,7 +100,7 @@
                         resultadoItem.innerHTML = `
                     <p><strong>📅 Data:</strong> ${dataFormatada || "Não informada"}</p>
                     <p><strong>⏰ Hora:</strong> ${atendimento.hora || "Não informada"}</p>
-                    <p><strong>👤 Cliente:</strong> ${atendimento.nome || "Não informado"}</p>
+                    <p><strong>👤 Pessoa:</strong> ${atendimento.nome || "Não informado"}</p>
                     <p><strong>🛠 Serviços/Produtos:</strong> ${atendimento.servicos || "Não informado"}</p>
                     <p><strong>💵 Preço:</strong> R$ ${atendimento.preco || "0,00"}</p>
                     <div class="action">Ver mais detalhes</div>
@@ -140,17 +140,64 @@
                 }
             }
 
-            modalDetalhes.innerHTML = `
-        <p><strong>ID do documento:</strong> ${doc.id}</p>
-        <p><strong>ID:</strong> ${atendimento.id || "Não informado"}</p>
-        <p><strong>Nome:</strong> ${atendimento.nome || "Não informado"}</p>
-        <p><strong>Data:</strong> ${dataFormatada || "Não informada"}</p>
-        <p><strong>Problema:</strong> ${atendimento.problema || "Não informado"}</p>
-        <p><strong>Solução:</strong> ${atendimento.solucao || "Não informada"}</p>
-        <p><strong>Observações:</strong> ${atendimento.observacoes || "Não informadas"}</p>
-    `;
+            // Verifica se há um `pessoaId` associado ao atendimento
+            if (atendimento.pessoaId) {
+                db.collection("pessoas").doc(atendimento.pessoaId).get()
+                    .then((pessoaDoc) => {
+                        if (pessoaDoc.exists) {
+                            const pessoa = pessoaDoc.data();
 
-            modal.style.display = "block"; // Exibe o modal
+                            modalDetalhes.innerHTML = `
+                                <p><strong>ID do documento:</strong> ${doc.id}</p>
+                                <p><strong>ID:</strong> ${atendimento.id || "Não informado"}</p>
+                                <p><strong>Nome:</strong> ${pessoa.nome || "Não informado"}</p>
+                                <p><strong>Telefone:</strong> ${pessoa.telefone || "Não informado"}</p>
+                                <p><strong>Contato:</strong> ${pessoa.contato || "Não informado"}</p>
+                                <p><strong>Endereço:</strong> ${pessoa.endereco || "Não informado"}</p>
+                                <p><strong>Data:</strong> ${dataFormatada || "Não informada"}</p>
+                                <p><strong>Problema:</strong> ${atendimento.problema || "Não informado"}</p>
+                                <p><strong>Solução:</strong> ${atendimento.solucao || "Não informada"}</p>
+                                <p><strong>Observações:</strong> ${atendimento.observacoes || "Não informadas"}</p>
+                            `;
+                        } else {
+                            modalDetalhes.innerHTML = `
+                                <p><strong>ID do documento:</strong> ${doc.id}</p>
+                                <p><strong>ID:</strong> ${atendimento.id || "Não informado"}</p>
+                                <p><strong>Nome:</strong> Pessoa não encontrada</p>
+                                <p><strong>Data:</strong> ${dataFormatada || "Não informada"}</p>
+                                <p><strong>Problema:</strong> ${atendimento.problema || "Não informado"}</p>
+                                <p><strong>Solução:</strong> ${atendimento.solucao || "Não informada"}</p>
+                                <p><strong>Observações:</strong> ${atendimento.observacoes || "Não informadas"}</p>
+                            `;
+                        }
+
+                        modal.style.display = "block"; // Exibe o modal
+                    })
+                    .catch((error) => {
+                        console.error("Erro ao buscar pessoa associada:", error);
+                        modalDetalhes.innerHTML = `
+                            <p><strong>ID do documento:</strong> ${doc.id}</p>
+                            <p><strong>ID:</strong> ${atendimento.id || "Não informado"}</p>
+                            <p><strong>Nome:</strong> Erro ao buscar pessoa</p>
+                            <p><strong>Data:</strong> ${dataFormatada || "Não informada"}</p>
+                            <p><strong>Problema:</strong> ${atendimento.problema || "Não informado"}</p>
+                            <p><strong>Solução:</strong> ${atendimento.solucao || "Não informada"}</p>
+                            <p><strong>Observações:</strong> ${atendimento.observacoes || "Não informadas"}</p>
+                        `;
+                        modal.style.display = "block"; // Exibe o modal
+                    });
+            } else {
+                modalDetalhes.innerHTML = `
+                    <p><strong>ID do documento:</strong> ${doc.id}</p>
+                    <p><strong>ID:</strong> ${atendimento.id || "Não informado"}</p>
+                    <p><strong>Nome:</strong> Não associado a nenhuma pessoa</p>
+                    <p><strong>Data:</strong> ${dataFormatada || "Não informada"}</p>
+                    <p><strong>Problema:</strong> ${atendimento.problema || "Não informado"}</p>
+                    <p><strong>Solução:</strong> ${atendimento.solucao || "Não informada"}</p>
+                    <p><strong>Observações:</strong> ${atendimento.observacoes || "Não informadas"}</p>
+                `;
+                modal.style.display = "block"; // Exibe o modal
+            }
         }
 
         window.addEventListener('load', buscarAtendimentos);

@@ -250,3 +250,28 @@ header h1 {
     flex-grow: 1;
     /* Faz o título ocupar o espaço restante */
 }
+
+#sugestoes {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: none;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    max-height: 150px;
+    overflow-y: auto;
+    position: absolute;
+    width: 100%;
+    z-index: 1000;
+}
+
+#sugestoes li {
+    padding: 10px;
+    cursor: pointer;
+    border-bottom: 1px solid #ccc;
+}
+
+#sugestoes li:hover {
+    background-color: #f0f0f0;
+}

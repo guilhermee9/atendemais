@@ -2,7 +2,7 @@
 <html>
 
 <head>
-    <title>Formulário de Atendimento</title>
+    <title>Cadastro de Pessoas</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="style.css">
@@ -15,7 +15,7 @@
 <body>
     <header>
         <div class="menu-icon" onclick="toggleMenu()">&#9776;</div>
-        <h1>Nova Agenda</h1>
+        <h1>Cadastro de Pessoas</h1>
     </header>
     <div class="sidebar" id="mySidebar">
         <a href="#" onclick="closeMenu()"><span class="menu-icon close-icon">&#9776;</span></a>
@@ -23,45 +23,60 @@
         <a href="busca.html">Busca</a>
         <a href="cadastro.html">Nova agenda</a>
     </div>
+<br>
+<br>
 
-    <h1 style="text-align: center;"></h1>
     <form id="buscaPessoa">
         <input type="text" id="campoBusca" placeholder="Buscar pessoa pelo nome..." autocomplete="off">
         <ul id="sugestoes" style="list-style: none; padding: 0; margin: 0; display: none; background-color: #fff; border: 1px solid #ccc; border-radius: 4px; max-height: 150px; overflow-y: auto;"></ul>
     </form>
     <br>
-    <form id="formularioAtendimento">
-        <input type="hidden" id="pessoaId" name="pessoaId"> <!-- Campo oculto para armazenar o ID da pessoa -->
-        <input type="text" id="nome" name="nome" placeholder="Nome da Pessoa" readonly required>
-        <input type="date" id="data" name="data" placeholder="Data" required>
-        <textarea id="problema" name="problema" rows="4" required placeholder="Problema"></textarea>
-        <textarea id="solucao" name="solucao" rows="4" placeholder="Solução"></textarea>
-        <textarea id="observacoes" name="observacoes" rows="4" placeholder="Observações"></textarea>
+    <form id="formularioPessoa">
+        <input type="text" id="nome" name="nome" placeholder="Nome" required>
+        <input type="tel" id="telefone" name="telefone" placeholder="Telefone" required>
+        <input type="text" id="contato" name="contato" placeholder="Contato" >
+        <textarea id="observacao" name="observacao" rows="4" placeholder="Observação"></textarea>
+        <textarea id="endereco" name="endereco" rows="4" placeholder="Endereço" ></textarea>
         <button type="submit">Enviar</button>
         <button type="reset">Limpar</button>
     </form>
 
-
     <script>
-
-
-        const formulario = document.getElementById('formularioAtendimento');
+        const formulario = document.getElementById('formularioPessoa');
         const campoBusca = document.getElementById('campoBusca');
         const sugestoes = document.getElementById('sugestoes');
+
+        // Função para obter o próximo ID sequencial
+        async function getNextId() {
+            const counterRef = db.collection('counters').doc('pessoas_counter');
+
+            try {
+                const doc = await counterRef.get();
+                if (doc.exists) {
+                    const currentCount = doc.data().count;
+                    await counterRef.update({ count: currentCount + 1 });
+                    return currentCount + 1;
+                } else {
+                    await counterRef.set({ count: 1 });
+                    return 1;
+                }
+            } catch (error) {
+                console.error("Erro ao obter o próximo ID:", error);
+                throw error;
+            }
+        }
 
         // Função para buscar pessoas no Firestore
         async function buscarPessoas(nome) {
             try {
                 const querySnapshot = await db.collection("pessoas")
                     .where("nome", ">=", nome)
-                    .where("nome", "<=", nome + "\uf8ff")
+                    .where("nome", "<=", nome + "\uf8ff") 
                     .get();
 
                 const resultados = [];
                 querySnapshot.forEach((doc) => {
-                    const pessoa = doc.data();
-                    pessoa.id = doc.id; // Adiciona o ID do documento ao objeto pessoa
-                    resultados.push(pessoa);
+                    resultados.push(doc.data());
                 });
 
                 return resultados;
@@ -89,10 +104,9 @@
                         item.style.padding = "10px";
                         item.style.cursor = "pointer";
 
-                        // Evento para selecionar a pessoa e preencher o campo oculto
+                        // Evento para preencher o formulário ao clicar em uma sugestão
                         item.addEventListener('click', () => {
-                            document.getElementById('pessoaId').value = pessoa.id; // Armazena o ID da pessoa
-                            document.getElementById('nome').value = pessoa.nome; // Preenche o nome no formulário
+                            preencherFormulario(pessoa);
                             sugestoes.style.display = "none";
                         });
 
@@ -108,63 +122,43 @@
             }
         });
 
-        // Evento para enviar o formulário
+        // Função para preencher o formulário com os dados da pessoa selecionada
+        function preencherFormulario(pessoa) {
+            document.getElementById('nome').value = pessoa.nome || "";
+            document.getElementById('telefone').value = pessoa.telefone || "";
+            document.getElementById('contato').value = pessoa.contato || "";
+            document.getElementById('observacao').value = pessoa.observacao || "";
+            document.getElementById('endereco').value = pessoa.endereco || "";
+        }
+
         formulario.addEventListener('submit', async (event) => {
             event.preventDefault();
 
             try {
-                const pessoaId = document.getElementById('pessoaId').value;
-                const data = document.getElementById('data').value;
-                const problema = document.getElementById('problema').value;
-                const solucao = document.getElementById('solucao').value;
-                const observacoes = document.getElementById('observacoes').value;
-
-                if (!pessoaId) {
-                    alert("Por favor, selecione uma pessoa antes de enviar o formulário.");
-                    return;
-                }
-
                 const nextId = await getNextId();
 
-                await db.collection("atendimentos").doc(nextId.toString()).set({
+                const nome = document.getElementById('nome').value;
+                const telefone = document.getElementById('telefone').value;
+                const contato = document.getElementById('contato').value;
+                const observacao = document.getElementById('observacao').value;
+                const endereco = document.getElementById('endereco').value;
+
+                await db.collection("pessoas").doc(nextId.toString()).set({
                     id: nextId,
-                    pessoaId: pessoaId, // Vincula o atendimento à pessoa selecionada
-                    data: data,
-                    problema: problema,
-                    solucao: solucao,
-                    observacoes: observacoes
+                    nome: nome,
+                    telefone: telefone,
+                    contato: contato,
+                    observacao: observacao,
+                    endereco: endereco
                 });
 
-                alert("Atendimento cadastrado com sucesso!");
+                alert("Dados enviados com sucesso!");
                 formulario.reset();
-                document.getElementById('pessoaId').value = ""; // Limpa o ID da pessoa
-                document.getElementById('nome').value = ""; // Limpa o nome da pessoa
             } catch (error) {
                 console.error("Erro ao enviar dados: ", error);
                 alert("Erro ao enviar dados. Consulte o console.");
             }
         });
-
-        // Função para obter o próximo ID sequencial
-        async function getNextId() {
-            const counterRef = db.collection('counters').doc('atendimentos_counter');
-
-            try {
-                const doc = await counterRef.get();
-                if (doc.exists) {
-                    const currentCount = doc.data().count;
-                    await counterRef.update({ count: currentCount + 1 });
-                    return currentCount + 1;
-                } else {
-                    await counterRef.set({ count: 1 });
-                    return 1;
-                }
-            } catch (error) {
-                console.error("Erro ao obter o próximo ID:", error);
-                throw error;
-            }
-        }
-
     </script>
 </body>
 
