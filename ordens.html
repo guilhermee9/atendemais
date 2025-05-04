@@ -14,15 +14,13 @@
 
 <body>
     <header>
-        <div class="logo">
-            <img src="/img/logo2.png" alt="Seu Logo">
-        </div>
         <div class="menu-icon" onclick="toggleMenu()">&#9776;</div>
+        <h1>Ordens</h1>
     </header>
     <div class="sidebar" id="mySidebar">
         <a href="#" onclick="closeMenu()"><span class="menu-icon close-icon">&#9776;</span></a>
-        <a href="ordens.html">Ordens de Serviço</a>
-        <a href="busca.html">Consultar</a>
+        <a href="ordens.html">Agenda</a>
+        <a href="busca.html">Busca</a>
         <a href="cadastro.html">Criar atendimento</a>
     </div>
 
@@ -37,8 +35,9 @@
             sidebar.classList.remove("active");
         }
     </script>
+    <br>
+    <br>
 
-    <h1 class="titulo">Ordens de Atendimento</h1>
     <div id="resultados"></div>
     <div id="meuModal" class="modal">
         <div class="modal-content">
@@ -99,9 +98,12 @@
                         const resultadoItem = document.createElement('div');
                         resultadoItem.classList.add('resultado-item');
                         resultadoItem.innerHTML = `
-                    <p><strong>ID:</strong> ${atendimento.id}</p>
-                    <p><strong>Nome:</strong> ${atendimento.nome}</p>
-                    <p><strong>Data:</strong> ${dataFormatada || "Não informada"}</p>
+                    <p><strong>📅 Data:</strong> ${dataFormatada || "Não informada"}</p>
+                    <p><strong>⏰ Hora:</strong> ${atendimento.hora || "Não informada"}</p>
+                    <p><strong>👤 Cliente:</strong> ${atendimento.nome || "Não informado"}</p>
+                    <p><strong>🛠 Serviços/Produtos:</strong> ${atendimento.servicos || "Não informado"}</p>
+                    <p><strong>💵 Preço:</strong> R$ ${atendimento.preco || "0,00"}</p>
+                    <div class="action">Ver mais detalhes</div>
                 `;
 
                         resultadoItem.addEventListener('click', () => {

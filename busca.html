@@ -16,22 +16,20 @@
 
 <body>
     <header>
-        <div class="logo">
-            <img src="/img/logo2.png" alt="Seu Logo">
-        </div>
         <div class="menu-icon" onclick="toggleMenu()">&#9776;</div>
+        <h1>Busca</h1>
     </header>
-
     <div class="sidebar" id="mySidebar">
         <a href="#" onclick="closeMenu()"><span class="menu-icon close-icon">&#9776;</span></a>
-        <a href="ordens.html">Ordens de Serviço</a>
+        <a href="ordens.html">Agenda</a>
         <a href="busca.html">Consultar</a>
         <a href="cadastro.html">Criar atendimento</a>
     </div>
 
     <div class="meio">
-        <h1 class="titulo">Buscar Atendimentos</h1>
-        <input type="text" id="buscaNome" placeholder="Buscar por nome" maxlength="50">
+        <br>
+        <br>
+        <input type="text" id="buscaNome" placeholder="Nome" maxlength="50">
         <input type="date" id="buscaData">
         <button onclick="buscarAtendimentos()">Buscar</button>
         <br>
@@ -174,9 +172,8 @@
                         const resultadoItem = document.createElement('div');
                         resultadoItem.classList.add('resultado-item');
                         resultadoItem.innerHTML = `
-                    <p><strong>ID:</strong> ${result.id}</p>
-                    <p><strong>Nome:</strong> ${result.data.nome}</p>
-                    <p><strong>Data:</strong> ${dataFormatada || "Não informada"}</p>
+                    <p><strong>👤 Cliente:</strong> ${result.data.nome}</p>
+                    <p><strong>📅 Data:</strong> ${dataFormatada || "Não informada"}</p>
                 `;
                         resultadoItem.addEventListener('click', () => exibirDetalhes(result.id));
                         resultadosDiv.appendChild(resultadoItem);
