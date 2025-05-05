@@ -2,7 +2,7 @@
 <html>
 
 <head>
-    <title>Cadastros Serviços</title>
+    <title>Agenda</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-app-compat.js"></script>
@@ -15,7 +15,7 @@
 <body>
     <header>
         <div class="menu-icon" onclick="toggleMenu()">&#9776;</div>
-        <h1>Serviços</h1>
+        <h1>Agenda</h1>
     </header>
     <div class="sidebar" id="mySidebar">
         <a href="#" onclick="closeMenu()"><span class="menu-icon close-icon">&#9776;</span></a>
@@ -40,6 +40,10 @@
     <br>
     <br>
 
+    <div class="button-container">
+        <button id="btnHoje">Hoje</button>
+        <button id="btnAmanha">Amanhã</button>
+    </div>
     <div id="resultados"></div>
     <div id="meuModal" class="modal">
         <div class="modal-content">
@@ -53,6 +57,10 @@
         const modal = document.getElementById("meuModal");
         const modalDetalhes = document.getElementById("modal-detalhes");
         const span = document.getElementsByClassName("close")[0];
+        const btnHoje = document.getElementById('btnHoje');
+        const btnAmanha = document.getElementById('btnAmanha');
+
+        let dataConsulta = new Date(); // Data inicial (hoje)
 
         span.onclick = function () {
             modal.style.display = "none";
@@ -64,98 +72,39 @@
             }
         }
 
+        function formatarData(date) {
+            return date.toISOString().split('T')[0]; // Formata como YYYY-MM-DD
+        }
+
         function buscarAtendimentos() {
             resultadosDiv.innerHTML = "";
 
+            const dataAtual = formatarData(dataConsulta);
+
             db.collection("atendimentos")
-                .orderBy("id", "desc")
-                .limit(10)
+                .where("data", "==", dataAtual) // Filtra pela data selecionada
                 .get()
                 .then((querySnapshot) => {
                     if (querySnapshot.empty) {
-                        resultadosDiv.innerHTML = "<p>Nenhuma ordem encontrada.</p>";
+                        resultadosDiv.innerHTML = `<p>Nenhuma ordem encontrada para ${dataAtual.split('-').reverse().join('/')}</p>`;
                         return;
                     }
 
                     querySnapshot.forEach((doc) => {
                         const atendimento = doc.data();
-                        let dataFormatada = "";
+                        let dataFormatada = dataAtual.split('-').reverse().join('/'); // Formata para DD/MM/YYYY
 
-                        if (atendimento.data) {
-                            if (atendimento.data instanceof firebase.firestore.Timestamp) {
-                                dataFormatada = atendimento.data.toDate().toLocaleDateString('pt-BR');
-                            } else if (typeof atendimento.data === 'string') {
-                                try {
-                                    const dataObj = new Date(atendimento.data);
-                                    dataFormatada = dataObj.toLocaleDateString('pt-BR');
-                                } catch (error) {
-                                    console.error("Erro ao converter string para data:", error);
-                                    dataFormatada = "Data inválida";
-                                }
-                            } else {
-                                dataFormatada = "Formato de data desconhecido";
-                            }
-                        }
+                        const resultadoItem = document.createElement('div');
+                        resultadoItem.classList.add('resultado-item');
+                        resultadoItem.innerHTML = `
+                            <p><strong>📅 Data:</strong> ${dataFormatada || "Não informada"}</p>
+                            <p><strong>⏰ Hora:</strong> ${atendimento.hora || "Não informada"}</p>
+                            <p><strong>👤 Pessoa:</strong> ${atendimento.pessoaId || "Não associada"}</p>
+                            <p><strong>🛠 Serviços/Produtos:</strong> ${atendimento.servicos || "Não informado"}</p>
+                            <p><strong>💵 Preço:</strong> R$ ${atendimento.preco || "0,00"}</p>
+                        `;
 
-                        // Busca o nome da pessoa na coleção "pessoas"
-                        if (atendimento.pessoaId && typeof atendimento.pessoaId === "string" && atendimento.pessoaId.trim() !== "") {
-                            try {
-                                console.log("pessoaId encontrado:", atendimento.pessoaId); // Log para depuração
-                                db.collection("pessoas").doc(atendimento.pessoaId).get()
-                                    .then((pessoaDoc) => {
-                                        const pessoaNome = pessoaDoc.exists ? pessoaDoc.data().nome : "Pessoa não encontrada";
-
-                                        const resultadoItem = document.createElement('div');
-                                        resultadoItem.classList.add('resultado-item');
-                                        resultadoItem.innerHTML = `
-                                            <p><strong>📅 Data:</strong> ${dataFormatada || "Não informada"}</p>
-                                            <p><strong>⏰ Hora:</strong> ${atendimento.hora || "Não informada"}</p>
-                                            <p><strong>👤 Pessoa:</strong> ${pessoaNome}</p>
-                                            <p><strong>🛠 Serviços/Produtos:</strong> ${atendimento.servicos || "Não informado"}</p>
-                                            <p><strong>💵 Preço:</strong> R$ ${atendimento.preco || "0,00"}</p>
-                                            <div class="action">Ver mais detalhes</div>
-                                        `;
-
-                                        resultadoItem.addEventListener('click', () => {
-                                            exibirDetalhes(doc);
-                                        });
-
-                                        resultadosDiv.appendChild(resultadoItem);
-                                    })
-                                    .catch((error) => {
-                                        console.error("Erro ao buscar pessoa associada:", error);
-                                        resultadosDiv.innerHTML += `
-                                            <div class="resultado-item">
-                                                <p><strong>📅 Data:</strong> ${dataFormatada || "Não informada"}</p>
-                                                <p><strong>⏰ Hora:</strong> ${atendimento.hora || "Não informada"}</p>
-                                                <p><strong>👤 Pessoa:</strong> Erro ao buscar pessoa</p>
-                                                <p><strong>🛠 Serviços/Produtos:</strong> ${atendimento.servicos || "Não informado"}</p>
-                                                <p><strong>💵 Preço:</strong> R$ ${atendimento.preco || "0,00"}</p>
-                                            </div>
-                                        `;
-                                    });
-                            } catch (error) {
-                                console.error("Erro inesperado ao processar pessoaId:", error);
-                            }
-                        } else {
-                            console.log("pessoaId não encontrado ou inválido:", atendimento.pessoaId); // Log para depuração
-                            const resultadoItem = document.createElement('div');
-                            resultadoItem.classList.add('resultado-item');
-                            resultadoItem.innerHTML = `
-                                <p><strong>📅 Data:</strong> ${dataFormatada || "Não informada"}</p>
-                                <p><strong>⏰ Hora:</strong> ${atendimento.hora || "Não informada"}</p>
-                                <p><strong>👤 Pessoa:</strong> Não associado a nenhuma pessoa</p>
-                                <p><strong>🛠 Serviços/Produtos:</strong> ${atendimento.servicos || "Não informado"}</p>
-                                <p><strong>💵 Preço:</strong> R$ ${atendimento.preco || "0,00"}</p>
-                                <div class="action">Ver mais detalhes</div>
-                            `;
-
-                            resultadoItem.addEventListener('click', () => {
-                                exibirDetalhes(doc);
-                            });
-
-                            resultadosDiv.appendChild(resultadoItem);
-                        }
+                        resultadosDiv.appendChild(resultadoItem);
                     });
                 })
                 .catch((error) => {
@@ -163,6 +112,22 @@
                     resultadosDiv.innerHTML = "<p>Erro ao buscar ordens. Consulte o console.</p>";
                 });
         }
+
+        // Eventos dos botões
+        btnHoje.addEventListener('click', () => {
+            dataConsulta = new Date(); // Define a data como hoje
+            buscarAtendimentos();
+        });
+
+        btnAmanha.addEventListener('click', () => {
+            const amanha = new Date();
+            amanha.setDate(amanha.getDate() + 1); // Incrementa 1 dia
+            dataConsulta = amanha;
+            buscarAtendimentos();
+        });
+
+        // Busca inicial (hoje)
+        window.addEventListener('load', buscarAtendimentos);
 
         function exibirDetalhes(doc) {
             const atendimento = doc.data();

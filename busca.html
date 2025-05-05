@@ -2,58 +2,61 @@
 <html>
 
 <head>
-    <title>Buscar Atendimento</title>
+    <title>Cadastros Serviços</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="style.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
-    <script
-        src="https://cdnjs.cloudflare.com/ajax/libs/moment-timezone/0.5.43/moment-timezone-with-data-10-year-range.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore-compat.js"></script>
     <script src="js/firebase-config.js" defer></script>
-    <script src="js/main.js"></script>
+    <link rel="stylesheet" href="style.css">
+
 </head>
 
 <body>
     <header>
         <div class="menu-icon" onclick="toggleMenu()">&#9776;</div>
-        <h1>Agenda ++</h1>
+        <h1>Serviços</h1>
     </header>
     <div class="sidebar" id="mySidebar">
         <a href="#" onclick="closeMenu()"><span class="menu-icon close-icon">&#9776;</span></a>
-        <a href="ordens.html">Agenda</a>
+        <a href="agenda.html">Agenda</a>
+        <a href="ordens.html">Ordens</a>
         <a href="busca.html">Busca</a>
-        <a href="cadastro.html">Criar atendimento</a>
+        <a href="cadastroPessoa.html">Pessoas</a>
+        <a href="cadastroAtendimento.html">Criar atendimento</a>
     </div>
 
-    <div class="sidebar" id="mySidebar">
-        <a href="#" onclick="closeMenu()"><span class="menu-icon close-icon">&#9776;</span></a>
-        <a href="ordens.html">Ordens de Serviço</a>
-        <a href="busca.html">Consultar</a>
-        <a href="cadastro.html">Criar atendimento</a>
-    </div>
+    <script>
+        function toggleMenu() {
+            var sidebar = document.getElementById("mySidebar");
+            sidebar.classList.toggle("active");
+        }
 
-    <div class="meio">
-        <br>
-        <br>
-        <input type="text" id="buscaNome" placeholder="Nome" maxlength="50">
-        <input type="date" id="buscaData">
-        <button onclick="buscarAtendimentos()">Buscar</button>
-        <br>
-    </div>
+        function closeMenu() {
+            var sidebar = document.getElementById("mySidebar");
+            sidebar.classList.remove("active");
+        }
+    </script>
+    <br>
+    <br>
 
+    <!-- Adicione o campo de busca com auto-completar -->
+    <form id="buscaPessoa">
+        <input type="text" id="campoBusca" placeholder="Buscar pessoa pelo nome..." autocomplete="off">
+        <ul id="sugestoes"
+            style="list-style: none; padding: 0; margin: 0; display: none; background-color: #fff; border: 1px solid #ccc; border-radius: 4px; max-height: 150px; overflow-y: auto;">
+        </ul>
+    </form>
+    <br>
+
+    <div id="resultados"></div>
     <div id="meuModal" class="modal">
         <div class="modal-content">
             <span class="close">&times;</span>
             <div id="modal-detalhes"></div>
         </div>
     </div>
-
-    <div id="resultados"></div>
-
-
-    <script>
+    <script type="module">
 
         const resultadosDiv = document.getElementById('resultados');
         const modal = document.getElementById("meuModal");
@@ -70,14 +73,23 @@
             }
         }
 
-        function exibirDetalhes(id) {
-            modalDetalhes.innerHTML = "";
+        function buscarAtendimentos() {
+            resultadosDiv.innerHTML = "";
 
-            db.collection("atendimentos").doc(id).get()
-                .then(doc => {
-                    if (doc.exists) {
+            db.collection("atendimentos")
+                .orderBy("data", "desc") // Ordena pela data em ordem decrescente
+                .limit(10) // Limita a 10 resultados
+                .get()
+                .then((querySnapshot) => {
+                    if (querySnapshot.empty) {
+                        resultadosDiv.innerHTML = "<p>Nenhuma ordem encontrada.</p>";
+                        return;
+                    }
+
+                    querySnapshot.forEach((doc) => {
                         const atendimento = doc.data();
                         let dataFormatada = "";
+
                         if (atendimento.data) {
                             if (atendimento.data instanceof firebase.firestore.Timestamp) {
                                 dataFormatada = atendimento.data.toDate().toLocaleDateString('pt-BR');
@@ -93,99 +105,274 @@
                                 dataFormatada = "Formato de data desconhecido";
                             }
                         }
+
+                        // Busca o nome da pessoa na coleção "pessoas"
+                        if (atendimento.pessoaId && typeof atendimento.pessoaId === "string" && atendimento.pessoaId.trim() !== "") {
+                            db.collection("pessoas").doc(atendimento.pessoaId).get()
+                                .then((pessoaDoc) => {
+                                    const pessoaNome = pessoaDoc.exists ? pessoaDoc.data().nome : "Pessoa não encontrada";
+
+                                    const resultadoItem = document.createElement('div');
+                                    resultadoItem.classList.add('resultado-item');
+                                    resultadoItem.innerHTML = `
+                                        <p><strong>📅 Data:</strong> ${dataFormatada || "Não informada"}</p>
+                                        <p><strong>⏰ Hora:</strong> ${atendimento.hora || "Não informada"}</p>
+                                        <p><strong>👤 Pessoa:</strong> ${pessoaNome}</p>
+                                        <p><strong>🛠 Serviços/Produtos:</strong> ${atendimento.problema || "Não informado"}</p>
+                                        <div class="action">Ver mais detalhes</div>
+                                    `;
+
+                                    resultadoItem.addEventListener('click', () => {
+                                        exibirDetalhes(doc);
+                                    });
+
+                                    resultadosDiv.appendChild(resultadoItem);
+                                })
+                                .catch((error) => {
+                                    console.error("Erro ao buscar pessoa associada:", error);
+                                    resultadosDiv.innerHTML += `
+                                        <div class="resultado-item">
+                                            <p><strong>📅 Data:</strong> ${dataFormatada || "Não informada"}</p>
+                                            <p><strong>⏰ Hora:</strong> ${atendimento.hora || "Não informada"}</p>
+                                            <p><strong>👤 Pessoa:</strong> Erro ao buscar pessoa</p>
+                                            <p><strong>🛠 Serviços/Produtos:</strong> ${atendimento.servicos || "Não informado"}</p>
+                                            <p><strong>💵 Preço:</strong> R$ ${atendimento.preco || "0,00"}</p>
+                                        </div>
+                                    `;
+                                });
+                        } else {
+                            const resultadoItem = document.createElement('div');
+                            resultadoItem.classList.add('resultado-item');
+                            resultadoItem.innerHTML = `
+                                <p><strong>📅 Data:</strong> ${dataFormatada || "Não informada"}</p>
+                                <p><strong>⏰ Hora:</strong> ${atendimento.hora || "Não informada"}</p>
+                                <p><strong>👤 Pessoa:</strong> Não associado a nenhuma pessoa</p>
+                                <p><strong>🛠 Serviços/Produtos:</strong> ${atendimento.problema || "Não informado"}</p>
+                                <p><strong>💵 Preço:</strong> R$ ${atendimento.preco || "0,00"}</p>
+                                <div class="action">Ver mais detalhes</div>
+                            `;
+
+                            resultadoItem.addEventListener('click', () => {
+                                exibirDetalhes(doc);
+                            });
+
+                            resultadosDiv.appendChild(resultadoItem);
+                        }
+                    });
+                })
+                .catch((error) => {
+                    console.error("Erro ao buscar ordens: ", error);
+                    resultadosDiv.innerHTML = "<p>Erro ao buscar ordens. Consulte o console.</p>";
+                });
+        }
+
+        function exibirDetalhes(doc) {
+            const atendimento = doc.data();
+            modalDetalhes.innerHTML = "";
+
+            let dataFormatada = "";
+            if (atendimento.data) {
+                if (atendimento.data instanceof firebase.firestore.Timestamp) {
+                    dataFormatada = atendimento.data.toDate().toLocaleDateString('pt-BR'); // Formatação para pt-BR (DD/MM/AAAA)
+                } else if (typeof atendimento.data === 'string') {
+                    try {
+                        const dataObj = new Date(atendimento.data);
+                        dataFormatada = dataObj.toLocaleDateString('pt-BR');
+                    } catch (error) {
+                        console.error("Erro ao converter string para data:", error);
+                        dataFormatada = "Data inválida";
+                    }
+                } else {
+                    dataFormatada = "Formato de data desconhecido";
+                }
+            }
+
+            // Verifica se há um `pessoaId` associado ao atendimento
+            if (atendimento.pessoaId) {
+                db.collection("pessoas").doc(atendimento.pessoaId).get()
+                    .then((pessoaDoc) => {
+                        if (pessoaDoc.exists) {
+                            const pessoa = pessoaDoc.data();
+
+                            modalDetalhes.innerHTML = `                                
+                                <p><strong>Nome:</strong> ${pessoa.nome || "Não informado"}</p>
+                                <p><strong>Telefone:</strong> ${pessoa.telefone || "Não informado"}</p>
+                                <p><strong>Contato:</strong> ${pessoa.contato || "Não informado"}</p>
+                                <p><strong>Endereço:</strong> ${pessoa.endereco || "Não informado"}</p>
+                                <p><strong>Data:</strong> ${dataFormatada || "Não informada"}</p>
+                                <br>
+                                <p><strong>Problema:</strong> ${atendimento.problema || "Não informado"}</p>
+                                <p><strong>Solução:</strong> ${atendimento.solucao || "Não informada"}</p>
+                                <p><strong>Observações:</strong> ${atendimento.observacoes || "Não informadas"}</p>
+                            `;
+                        } else {
+                            modalDetalhes.innerHTML = `
+                                <p><strong>ID do documento:</strong> ${doc.id}</p>
+                                <p><strong>ID:</strong> ${atendimento.id || "Não informado"}</p>
+                                <p><strong>Nome:</strong> Pessoa não encontrada</p>
+                                <p><strong>Data:</strong> ${dataFormatada || "Não informada"}</p>
+                                <p><strong>Problema:</strong> ${atendimento.problema || "Não informado"}</p>
+                                <p><strong>Solução:</strong> ${atendimento.solucao || "Não informada"}</p>
+                                <p><strong>Observações:</strong> ${atendimento.observacoes || "Não informadas"}</p>
+                            `;
+                        }
+
+                        modal.style.display = "block"; // Exibe o modal
+                    })
+                    .catch((error) => {
+                        console.error("Erro ao buscar pessoa associada:", error);
                         modalDetalhes.innerHTML = `
-                    <p><strong>ID:</strong> ${atendimento.id}</p>
-                    <p><strong>Nome:</strong> ${atendimento.nome || "Não informado"}</p>
+                            <p><strong>ID do documento:</strong> ${doc.id}</p>
+                            <p><strong>ID:</strong> ${atendimento.id || "Não informado"}</p>
+                            <p><strong>Nome:</strong> Erro ao buscar pessoa</p>
+                            <p><strong>Data:</strong> ${dataFormatada || "Não informada"}</p>
+                            <p><strong>Problema:</strong> ${atendimento.problema || "Não informado"}</p>
+                            <p><strong>Solução:</strong> ${atendimento.solucao || "Não informada"}</p>
+                            <p><strong>Observações:</strong> ${atendimento.observacoes || "Não informadas"}</p>
+                        `;
+                        modal.style.display = "block"; // Exibe o modal
+                    });
+            } else {
+                modalDetalhes.innerHTML = `
+                    <p><strong>ID do documento:</strong> ${doc.id}</p>
+                    <p><strong>ID:</strong> ${atendimento.id || "Não informado"}</p>
+                    <p><strong>Nome:</strong> Não associado a nenhuma pessoa</p>
                     <p><strong>Data:</strong> ${dataFormatada || "Não informada"}</p>
                     <p><strong>Problema:</strong> ${atendimento.problema || "Não informado"}</p>
                     <p><strong>Solução:</strong> ${atendimento.solucao || "Não informada"}</p>
                     <p><strong>Observações:</strong> ${atendimento.observacoes || "Não informadas"}</p>
                 `;
-                        modal.style.display = "block";
-                    } else {
-                        modalDetalhes.innerHTML = "<p>Atendimento não encontrado.</p>";
-                        modal.style.display = "block";
-                    }
-                }).catch(error => {
-                    console.error("Erro ao buscar detalhes:", error);
-                    modalDetalhes.innerHTML = "<p>Erro ao buscar detalhes.</p>";
-                    modal.style.display = "block";
-                });
+                modal.style.display = "block"; // Exibe o modal
+            }
         }
 
-        function buscarAtendimentos() {
-            const nomeBusca = document.getElementById('buscaNome').value.toLowerCase();
-            const dataBusca = document.getElementById('buscaData').value;
+        window.addEventListener('load', buscarAtendimentos);
+
+        const campoBusca = document.getElementById('campoBusca');
+        const sugestoes = document.getElementById('sugestoes');
+
+        // Função para buscar pessoas no Firestore
+        async function buscarPessoas(nome) {
+            try {
+                const querySnapshot = await db.collection("pessoas")
+                    .where("nome", ">=", nome)
+                    .where("nome", "<=", nome + "\uf8ff")
+                    .get();
+
+                const resultados = [];
+                querySnapshot.forEach((doc) => {
+                    resultados.push({ id: doc.id, ...doc.data() });
+                });
+
+                return resultados;
+            } catch (error) {
+                console.error("Erro ao buscar pessoas:", error);
+                return [];
+            }
+        }
+
+        // Evento para capturar a digitação no campo de busca
+        campoBusca.addEventListener('input', async (event) => {
+            const valor = event.target.value.trim();
+
+            // Exibe sugestões apenas se houver pelo menos 3 caracteres
+            if (valor.length >= 3) {
+                const resultados = await buscarPessoas(valor);
+
+                // Limpa as sugestões anteriores
+                sugestoes.innerHTML = "";
+
+                if (resultados.length > 0) {
+                    resultados.forEach((pessoa) => {
+                        const item = document.createElement('li');
+                        item.textContent = pessoa.nome;
+                        item.style.padding = "10px";
+                        item.style.cursor = "pointer";
+
+                        // Evento para buscar atendimentos ao clicar em uma sugestão
+                        item.addEventListener('click', () => {
+                            buscarAtendimentosPorPessoa(pessoa.id);
+                            sugestoes.style.display = "none";
+                            campoBusca.value = pessoa.nome;
+                        });
+
+                        sugestoes.appendChild(item);
+                    });
+
+                    sugestoes.style.display = "block";
+                } else {
+                    sugestoes.style.display = "none";
+                }
+            } else {
+                sugestoes.style.display = "none";
+            }
+        });
+
+        // Função para buscar atendimentos por pessoa
+        async function buscarAtendimentosPorPessoa(pessoaId) {
 
             resultadosDiv.innerHTML = "";
 
-            let results = [];
+            try {
+                // Certifique-se de que o pessoaId é uma string
+                const pessoaIdString = pessoaId.toString();
 
-            const nomeQuery = nomeBusca ? db.collection("atendimentos")
-                .where("nome", ">=", nomeBusca)
-                .where("nome", "<=", nomeBusca + "\uf8ff") : null;
+                // Consulta ordenada por data (mais recente primeiro)
+                const querySnapshot = await db.collection("atendimentos")
+                    .where("pessoaId", "==", pessoaIdString)
+                    .orderBy("data", "desc") // Ordena pela data em ordem decrescente
+                    .get();
 
-            const dataQuery = dataBusca ? db.collection("atendimentos").where("data", "==", dataBusca) : null;
+                if (querySnapshot.empty) {
 
-            const promises = [];
-            if (nomeQuery) promises.push(nomeQuery.get());
-            if (dataQuery) promises.push(dataQuery.get());
-
-            if (promises.length === 0) {
-                resultadosDiv.innerHTML = "<p>Nenhum critério de busca fornecido.</p>";
-                return;
-            }
-
-            Promise.all(promises).then(snapshots => {
-                snapshots.forEach(snapshot => {
-                    if (!snapshot.empty) {
-                        snapshot.forEach(doc => {
-                            if (!results.some(r => r.id === doc.id)) {
-                                results.push({ id: doc.id, data: doc.data() });
-                            }
-                        });
-                    }
-                });
-
-                if (results.length === 0) {
-                    resultadosDiv.innerHTML = "<p>Nenhum resultado encontrado.</p>";
-                } else {
-                    results.forEach(result => {
-
-                        let dataFormatada = "";
-                        if (result.data.data) {
-                            if (result.data.data instanceof firebase.firestore.Timestamp) {
-                                dataFormatada = moment.tz(result.data.data.toDate(), "America/Sao_Paulo").format('DD/MM/YYYY'); // Usando moment-timezone
-                            } else if (typeof result.data.data === 'string') {
-                                try {
-                                    dataFormatada = moment.tz(result.data.data, "America/Sao_Paulo").format('DD/MM/YYYY');
-                                } catch (error) {
-                                    console.error("Erro ao converter string para data:", error);
-                                    dataFormatada = "Data inválida";
-                                }
-                            } else {
-                                dataFormatada = "Formato de data desconhecido";
-                            }
-                        }
-                        const resultadoItem = document.createElement('div');
-                        resultadoItem.classList.add('resultado-item');
-                        resultadoItem.innerHTML = `
-                    <p><strong>👤 Cliente:</strong> ${result.data.nome}</p>
-                    <p><strong>📅 Data:</strong> ${dataFormatada || "Não informada"}</p>
-                `;
-                        resultadoItem.addEventListener('click', () => exibirDetalhes(result.id));
-                        resultadosDiv.appendChild(resultadoItem);
-                    });
+                    resultadosDiv.innerHTML = "<p>Nenhum atendimento encontrado para esta pessoa.</p>";
+                    return;
                 }
-            }).catch(error => {
-                console.error("Erro nas buscas: ", error);
-                resultadosDiv.innerHTML = "<p>Erro nas buscas. Consulte o console.</p>";
-            });
+
+                querySnapshot.forEach((doc) => {
+                    const atendimento = doc.data();
+
+                    let dataFormatada = "";
+
+                    if (atendimento.data) {
+                        if (atendimento.data instanceof firebase.firestore.Timestamp) {
+                            dataFormatada = atendimento.data.toDate().toLocaleDateString('pt-BR');
+                        } else if (typeof atendimento.data === 'string') {
+                            try {
+                                const dataObj = new Date(atendimento.data);
+                                dataFormatada = dataObj.toLocaleDateString('pt-BR');
+                            } catch (error) {
+                                console.error("Erro ao converter string para data:", error);
+                                dataFormatada = "Data inválida";
+                            }
+                        } else {
+                            dataFormatada = "Formato de data desconhecido";
+                        }
+                    }
+
+                    const resultadoItem = document.createElement('div');
+                    resultadoItem.classList.add('resultado-item');
+                    resultadoItem.innerHTML = `
+                        <p><strong>📅 Data:</strong> ${dataFormatada || "Não informada"}</p>
+                        <p><strong>⏰ Hora:</strong> ${atendimento.hora || "Não informada"}</p>
+                        <p><strong>🛠 Serviços/Produtos:</strong> ${atendimento.servicos || "Não informado"}</p>
+                        <p><strong>💵 Preço:</strong> R$ ${atendimento.preco || "0,00"}</p>
+                        <div class="action">Ver mais detalhes</div>
+                    `;
+
+                    resultadoItem.addEventListener('click', () => {
+                        exibirDetalhes(doc);
+                    });
+
+                    resultadosDiv.appendChild(resultadoItem);
+                });
+            } catch (error) {
+                console.error("Erro ao buscar atendimentos por pessoa:", error);
+                resultadosDiv.innerHTML = "<p>Erro ao buscar atendimentos. Consulte o console.</p>";
+            }
         }
-
-
-
     </script>
+
 </body>
 
 </html>

@@ -19,9 +19,11 @@
     </header>
     <div class="sidebar" id="mySidebar">
         <a href="#" onclick="closeMenu()"><span class="menu-icon close-icon">&#9776;</span></a>
-        <a href="ordens.html">Agenda</a>
+        <a href="agenda.html">Agenda</a>
+        <a href="ordens.html">Ordens</a>
         <a href="busca.html">Busca</a>
-        <a href="cadastro.html">Nova agenda</a>
+        <a href="cadastroPessoa.html">Pessoas</a>
+        <a href="cadastroAtendimento.html">Criar atendimento</a>
     </div>
 
     <h1 style="text-align: center;"></h1>
@@ -34,6 +36,7 @@
         <input type="hidden" id="pessoaId" name="pessoaId"> <!-- Campo oculto para armazenar o ID da pessoa -->
         <input type="text" id="nome" name="nome" placeholder="Nome da Pessoa" readonly required>
         <input type="date" id="data" name="data" placeholder="Data" required>
+        <input type="time" id="hora" name="hora" placeholder="Hora" required> <!-- Novo campo para hora -->
         <textarea id="problema" name="problema" rows="4" required placeholder="Problema"></textarea>
         <textarea id="solucao" name="solucao" rows="4" placeholder="Solução"></textarea>
         <textarea id="observacoes" name="observacoes" rows="4" placeholder="Observações"></textarea>
@@ -115,6 +118,7 @@
             try {
                 const pessoaId = document.getElementById('pessoaId').value;
                 const data = document.getElementById('data').value;
+                const hora = document.getElementById('hora').value; // Captura o valor do campo de hora
                 const problema = document.getElementById('problema').value;
                 const solucao = document.getElementById('solucao').value;
                 const observacoes = document.getElementById('observacoes').value;
@@ -130,6 +134,7 @@
                     id: nextId,
                     pessoaId: pessoaId, // Vincula o atendimento à pessoa selecionada
                     data: data,
+                    hora: hora, // Adiciona o campo de hora ao documento
                     problema: problema,
                     solucao: solucao,
                     observacoes: observacoes
