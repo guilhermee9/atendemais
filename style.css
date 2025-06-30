@@ -275,3 +275,13 @@ header h1 {
 #sugestoes li:hover {
     background-color: #f0f0f0;
 }
+
+.textt-separator {
+    text-align: center;
+    margin: 20px 0;
+    font-size: 20px;
+    color: #085c28;
+
+    font-weight: bold;
+
+}

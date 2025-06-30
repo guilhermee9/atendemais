@@ -19,9 +19,9 @@
     </header>
     <div class="sidebar" id="mySidebar">
         <a href="#" onclick="closeMenu()"><span class="menu-icon close-icon">&#9776;</span></a>
-        <a href="agenda.html">Agenda</a>
+        <a href="agenda.html">Agenda do dia</a>
         <a href="ordens.html">Ordens</a>
-        <a href="busca.html">Busca</a>
+        <a href="busca.html">Busca pessoa</a>
         <a href="cadastroPessoa.html">Pessoas</a>
         <a href="cadastroAtendimento.html">Criar atendimento</a>
     </div>
@@ -29,148 +29,155 @@
     <h1 style="text-align: center;"></h1>
     <form id="buscaPessoa">
         <input type="text" id="campoBusca" placeholder="Buscar pessoa pelo nome..." autocomplete="off">
-        <ul id="sugestoes" style="list-style: none; padding: 0; margin: 0; display: none; background-color: #fff; border: 1px solid #ccc; border-radius: 4px; max-height: 150px; overflow-y: auto;"></ul>
+        <ul id="sugestoes"
+            style="list-style: none; padding: 0; margin: 0; display: none; background-color: #fff; border: 1px solid #ccc; border-radius: 4px; max-height: 150px; overflow-y: auto;">
+        </ul>
     </form>
+
+    <p class="textt-separator">ou</p>
     <br>
     <form id="formularioAtendimento">
-        <input type="hidden" id="pessoaId" name="pessoaId"> <!-- Campo oculto para armazenar o ID da pessoa -->
-        <input type="text" id="nome" name="nome" placeholder="Nome da Pessoa" readonly required>
-        <input type="date" id="data" name="data" placeholder="Data" required>
-        <input type="time" id="hora" name="hora" placeholder="Hora" required> <!-- Novo campo para hora -->
-        <textarea id="problema" name="problema" rows="4" required placeholder="Problema"></textarea>
-        <textarea id="solucao" name="solucao" rows="4" placeholder="Solução"></textarea>
-        <textarea id="observacoes" name="observacoes" rows="4" placeholder="Observações"></textarea>
-        <button type="submit">Enviar</button>
-        <button type="reset">Limpar</button>
-    </form>
+        <form id="formularioAtendimento">
+            <input type="hidden" id="pessoaId" name="pessoaId"> <!-- Campo oculto para armazenar o ID da pessoa -->
+            <input type="text" id="nome" name="nome" placeholder="Nome da Pessoa" readonly required>
+            <input type="date" id="data" name="data" placeholder="Data" required>
+            <input type="time" id="hora" name="hora" placeholder="Hora" required> <!-- Novo campo para hora -->
+            <textarea id="problema" name="problema" rows="4" required placeholder="Problema"></textarea>
+            <textarea id="solucao" name="solucao" rows="4" placeholder="Solução"></textarea>
+            <textarea id="observacoes" name="observacoes" rows="4" placeholder="Observações"></textarea>
+            <div class="button-container">
+                <button type="submit">Enviar</button>
+                <button type="reset">Limpar</button>
+            </div>
+        </form>
 
 
-    <script>
+        <script>
 
 
-        const formulario = document.getElementById('formularioAtendimento');
-        const campoBusca = document.getElementById('campoBusca');
-        const sugestoes = document.getElementById('sugestoes');
+            const formulario = document.getElementById('formularioAtendimento');
+            const campoBusca = document.getElementById('campoBusca');
+            const sugestoes = document.getElementById('sugestoes');
 
-        // Função para buscar pessoas no Firestore
-        async function buscarPessoas(nome) {
-            try {
-                const querySnapshot = await db.collection("pessoas")
-                    .where("nome", ">=", nome)
-                    .where("nome", "<=", nome + "\uf8ff")
-                    .get();
+            // Função para buscar pessoas no Firestore
+            async function buscarPessoas(nome) {
+                try {
+                    const querySnapshot = await db.collection("pessoas")
+                        .where("nome", ">=", nome)
+                        .where("nome", "<=", nome + "\uf8ff")
+                        .get();
 
-                const resultados = [];
-                querySnapshot.forEach((doc) => {
-                    const pessoa = doc.data();
-                    pessoa.id = doc.id; // Adiciona o ID do documento ao objeto pessoa
-                    resultados.push(pessoa);
-                });
-
-                return resultados;
-            } catch (error) {
-                console.error("Erro ao buscar pessoas:", error);
-                return [];
-            }
-        }
-
-        // Evento para capturar a digitação no campo de busca
-        campoBusca.addEventListener('input', async (event) => {
-            const valor = event.target.value.trim();
-
-            // Exibe sugestões apenas se houver pelo menos 3 caracteres
-            if (valor.length >= 3) {
-                const resultados = await buscarPessoas(valor);
-
-                // Limpa as sugestões anteriores
-                sugestoes.innerHTML = "";
-
-                if (resultados.length > 0) {
-                    resultados.forEach((pessoa) => {
-                        const item = document.createElement('li');
-                        item.textContent = pessoa.nome;
-                        item.style.padding = "10px";
-                        item.style.cursor = "pointer";
-
-                        // Evento para selecionar a pessoa e preencher o campo oculto
-                        item.addEventListener('click', () => {
-                            document.getElementById('pessoaId').value = pessoa.id; // Armazena o ID da pessoa
-                            document.getElementById('nome').value = pessoa.nome; // Preenche o nome no formulário
-                            sugestoes.style.display = "none";
-                        });
-
-                        sugestoes.appendChild(item);
+                    const resultados = [];
+                    querySnapshot.forEach((doc) => {
+                        const pessoa = doc.data();
+                        pessoa.id = doc.id; // Adiciona o ID do documento ao objeto pessoa
+                        resultados.push(pessoa);
                     });
 
-                    sugestoes.style.display = "block";
+                    return resultados;
+                } catch (error) {
+                    console.error("Erro ao buscar pessoas:", error);
+                    return [];
+                }
+            }
+
+            // Evento para capturar a digitação no campo de busca
+            campoBusca.addEventListener('input', async (event) => {
+                const valor = event.target.value.trim();
+
+                // Exibe sugestões apenas se houver pelo menos 3 caracteres
+                if (valor.length >= 3) {
+                    const resultados = await buscarPessoas(valor);
+
+                    // Limpa as sugestões anteriores
+                    sugestoes.innerHTML = "";
+
+                    if (resultados.length > 0) {
+                        resultados.forEach((pessoa) => {
+                            const item = document.createElement('li');
+                            item.textContent = pessoa.nome;
+                            item.style.padding = "10px";
+                            item.style.cursor = "pointer";
+
+                            // Evento para selecionar a pessoa e preencher o campo oculto
+                            item.addEventListener('click', () => {
+                                document.getElementById('pessoaId').value = pessoa.id; // Armazena o ID da pessoa
+                                document.getElementById('nome').value = pessoa.nome; // Preenche o nome no formulário
+                                sugestoes.style.display = "none";
+                            });
+
+                            sugestoes.appendChild(item);
+                        });
+
+                        sugestoes.style.display = "block";
+                    } else {
+                        sugestoes.style.display = "none";
+                    }
                 } else {
                     sugestoes.style.display = "none";
                 }
-            } else {
-                sugestoes.style.display = "none";
-            }
-        });
+            });
 
-        // Evento para enviar o formulário
-        formulario.addEventListener('submit', async (event) => {
-            event.preventDefault();
+            // Evento para enviar o formulário
+            formulario.addEventListener('submit', async (event) => {
+                event.preventDefault();
 
-            try {
-                const pessoaId = document.getElementById('pessoaId').value;
-                const data = document.getElementById('data').value;
-                const hora = document.getElementById('hora').value; // Captura o valor do campo de hora
-                const problema = document.getElementById('problema').value;
-                const solucao = document.getElementById('solucao').value;
-                const observacoes = document.getElementById('observacoes').value;
+                try {
+                    const pessoaId = document.getElementById('pessoaId').value;
+                    const data = document.getElementById('data').value;
+                    const hora = document.getElementById('hora').value; // Captura o valor do campo de hora
+                    const problema = document.getElementById('problema').value;
+                    const solucao = document.getElementById('solucao').value;
+                    const observacoes = document.getElementById('observacoes').value;
 
-                if (!pessoaId) {
-                    alert("Por favor, selecione uma pessoa antes de enviar o formulário.");
-                    return;
+                    if (!pessoaId) {
+                        alert("Por favor, selecione uma pessoa antes de enviar o formulário.");
+                        return;
+                    }
+
+                    const nextId = await getNextId();
+
+                    await db.collection("atendimentos").doc(nextId.toString()).set({
+                        id: nextId,
+                        pessoaId: pessoaId, // Vincula o atendimento à pessoa selecionada
+                        data: data,
+                        hora: hora, // Adiciona o campo de hora ao documento
+                        problema: problema,
+                        solucao: solucao,
+                        observacoes: observacoes
+                    });
+
+                    alert("Atendimento cadastrado com sucesso!");
+                    formulario.reset();
+                    document.getElementById('pessoaId').value = ""; // Limpa o ID da pessoa
+                    document.getElementById('nome').value = ""; // Limpa o nome da pessoa
+                } catch (error) {
+                    console.error("Erro ao enviar dados: ", error);
+                    alert("Erro ao enviar dados. Consulte o console.");
                 }
+            });
 
-                const nextId = await getNextId();
+            // Função para obter o próximo ID sequencial
+            async function getNextId() {
+                const counterRef = db.collection('counters').doc('atendimentos_counter');
 
-                await db.collection("atendimentos").doc(nextId.toString()).set({
-                    id: nextId,
-                    pessoaId: pessoaId, // Vincula o atendimento à pessoa selecionada
-                    data: data,
-                    hora: hora, // Adiciona o campo de hora ao documento
-                    problema: problema,
-                    solucao: solucao,
-                    observacoes: observacoes
-                });
-
-                alert("Atendimento cadastrado com sucesso!");
-                formulario.reset();
-                document.getElementById('pessoaId').value = ""; // Limpa o ID da pessoa
-                document.getElementById('nome').value = ""; // Limpa o nome da pessoa
-            } catch (error) {
-                console.error("Erro ao enviar dados: ", error);
-                alert("Erro ao enviar dados. Consulte o console.");
-            }
-        });
-
-        // Função para obter o próximo ID sequencial
-        async function getNextId() {
-            const counterRef = db.collection('counters').doc('atendimentos_counter');
-
-            try {
-                const doc = await counterRef.get();
-                if (doc.exists) {
-                    const currentCount = doc.data().count;
-                    await counterRef.update({ count: currentCount + 1 });
-                    return currentCount + 1;
-                } else {
-                    await counterRef.set({ count: 1 });
-                    return 1;
+                try {
+                    const doc = await counterRef.get();
+                    if (doc.exists) {
+                        const currentCount = doc.data().count;
+                        await counterRef.update({ count: currentCount + 1 });
+                        return currentCount + 1;
+                    } else {
+                        await counterRef.set({ count: 1 });
+                        return 1;
+                    }
+                } catch (error) {
+                    console.error("Erro ao obter o próximo ID:", error);
+                    throw error;
                 }
-            } catch (error) {
-                console.error("Erro ao obter o próximo ID:", error);
-                throw error;
             }
-        }
 
-    </script>
+        </script>
 </body>
 
 </html>
