@@ -26,34 +26,71 @@
         <a href="cadastroAtendimento.html">Criar atendimento</a>
     </div>
 
-
-    <h1 style="text-align: center;"></h1>
+    <h2 class="section-title">Buscar Pessoa Existente</h2>
     <form id="buscaPessoa">
         <input type="text" id="campoBusca" placeholder="Buscar pessoa pelo nome..." autocomplete="off">
         <ul id="sugestoes"
             style="list-style: none; padding: 0; margin: 0; display: none; background-color: #fff; border: 1px solid #ccc; border-radius: 4px; max-height: 150px; overflow-y: auto;">
         </ul>
     </form>
+
+    <p class="textt-separator">ou</p>
     <br>
+
+    <h2 class="section-title">Dados do Atendimento</h2>
     <form id="formularioAtendimento">
-        <input type="hidden" id="pessoaId" name="pessoaId"> <!-- Campo oculto para armazenar o ID da pessoa -->
-        <input type="text" id="nome" name="nome" placeholder="Nome da Pessoa" readonly required>
+        <input type="hidden" id="pessoaId" name="pessoaId">
+        <input type="text" id="nome" name="nome" placeholder="Nome da Pessoa (para novo cadastro ou selecione acima)"
+            required>
+        <input type="tel" id="telefonePessoa" name="telefonePessoa" placeholder="Telefone da Nova Pessoa (opcional)">
+        <input type="text" id="contatoPessoa" name="contatoPessoa" placeholder="Contato da Nova Pessoa (opcional)">
+        <textarea id="enderecoPessoa" name="enderecoPessoa" rows="2"
+            placeholder="Endereço da Nova Pessoa (opcional)"></textarea>
+        <textarea id="observacaoPessoa" name="observacaoPessoa" rows="2"
+            placeholder="Observações da Nova Pessoa (opcional)"></textarea>
         <input type="date" id="data" name="data" placeholder="Data" required>
-        <input type="time" id="hora" name="hora" placeholder="Hora" required> <!-- Novo campo para hora -->
+        <input type="time" id="hora" name="hora" placeholder="Hora" required>
         <textarea id="problema" name="problema" rows="4" required placeholder="Problema"></textarea>
         <textarea id="solucao" name="solucao" rows="4" placeholder="Solução"></textarea>
         <textarea id="observacoes" name="observacoes" rows="4" placeholder="Observações"></textarea>
-        <button type="submit">Enviar</button>
-        <button type="reset">Limpar</button>
+        <div class="button-container">
+            <button type="submit">Enviar</button>
+            <button type="reset">Limpar</button>
+        </div>
     </form>
 
-
-    <script>
-
-
+    <script type="module">
         const formulario = document.getElementById('formularioAtendimento');
         const campoBusca = document.getElementById('campoBusca');
         const sugestoes = document.getElementById('sugestoes');
+        const nomeInput = document.getElementById('nome');
+        const pessoaIdInput = document.getElementById('pessoaId');
+
+        // Referências aos novos campos para cadastro de pessoa (se você os adicionou no HTML)
+        const telefonePessoaInput = document.getElementById('telefonePessoa');
+        const contatoPessoaInput = document.getElementById('contatoPessoa');
+        const enderecoPessoaInput = document.getElementById('enderecoPessoa');
+        const observacaoPessoaInput = document.getElementById('observacaoPessoa');
+
+        // Função para obter o próximo ID sequencial para a coleção 'pessoas'
+        async function getNextPersonId() {
+            const counterRef = db.collection('counters').doc('pessoas_counter'); // Contador específico para pessoas
+
+            try {
+                const doc = await counterRef.get();
+                if (doc.exists) {
+                    const currentCount = doc.data().count;
+                    await counterRef.update({ count: currentCount + 1 });
+                    return currentCount + 1;
+                } else {
+                    await counterRef.set({ count: 1 });
+                    return 1;
+                }
+            } catch (error) {
+                console.error("Erro ao obter o próximo ID para pessoas:", error);
+                throw error;
+            }
+        }
 
         // Função para buscar pessoas no Firestore
         async function buscarPessoas(nome) {
@@ -66,10 +103,9 @@
                 const resultados = [];
                 querySnapshot.forEach((doc) => {
                     const pessoa = doc.data();
-                    pessoa.id = doc.id; // Adiciona o ID do documento ao objeto pessoa
+                    pessoa.id = doc.id;
                     resultados.push(pessoa);
                 });
-
                 return resultados;
             } catch (error) {
                 console.error("Erro ao buscar pessoas:", error);
@@ -77,15 +113,25 @@
             }
         }
 
+        // Função para resetar e habilitar os campos da pessoa para um novo cadastro
+        function resetPersonFieldsForNewEntry() {
+            pessoaIdInput.value = "";
+            nomeInput.value = "";
+            nomeInput.readOnly = false; // Garante que o campo nome é editável
+
+            if (telefonePessoaInput) { telefonePessoaInput.value = ""; telefonePessoaInput.readOnly = false; }
+            if (contatoPessoaInput) { contatoPessoaInput.value = ""; contatoPessoaInput.readOnly = false; }
+            if (enderecoPessoaInput) { enderecoPessoaInput.value = ""; enderecoPessoaInput.readOnly = false; }
+            if (observacaoPessoaInput) { observacaoPessoaInput.value = ""; observacaoPessoaInput.readOnly = false; }
+        }
+
         // Evento para capturar a digitação no campo de busca
         campoBusca.addEventListener('input', async (event) => {
             const valor = event.target.value.trim();
 
-            // Exibe sugestões apenas se houver pelo menos 3 caracteres
             if (valor.length >= 3) {
                 const resultados = await buscarPessoas(valor);
 
-                // Limpa as sugestões anteriores
                 sugestoes.innerHTML = "";
 
                 if (resultados.length > 0) {
@@ -95,23 +141,42 @@
                         item.style.padding = "10px";
                         item.style.cursor = "pointer";
 
-                        // Evento para selecionar a pessoa e preencher o campo oculto
                         item.addEventListener('click', () => {
-                            document.getElementById('pessoaId').value = pessoa.id; // Armazena o ID da pessoa
-                            document.getElementById('nome').value = pessoa.nome; // Preenche o nome no formulário
+                            pessoaIdInput.value = pessoa.id;
+                            nomeInput.value = pessoa.nome;
+                            nomeInput.readOnly = true; // Torna o campo de nome somente leitura
+                            campoBusca.value = ""; // Limpa o campo de busca
                             sugestoes.style.display = "none";
-                        });
 
+                            // Preencher campos de telefone, contato, etc. da pessoa existente
+                            if (telefonePessoaInput) { telefonePessoaInput.value = pessoa.telefone || ""; telefonePessoaInput.readOnly = true; }
+                            if (contatoPessoaInput) { contatoPessoaInput.value = pessoa.contato || ""; contatoPessoaInput.readOnly = true; }
+                            if (enderecoPessoaInput) { enderecoPessoaInput.value = pessoa.endereco || ""; enderecoPessoaInput.readOnly = true; }
+                            if (observacaoPessoaInput) { observacaoPessoaInput.value = pessoa.observacao || ""; observacaoPessoaInput.readOnly = true; }
+                        });
                         sugestoes.appendChild(item);
                     });
-
                     sugestoes.style.display = "block";
                 } else {
+                    // Se não houver resultados na busca, permite novo cadastro
                     sugestoes.style.display = "none";
+                    resetPersonFieldsForNewEntry(); // Habilita campos para nova pessoa
+                    nomeInput.value = valor; // Preenche o nome que já foi digitado na busca
                 }
             } else {
+                // Se o campo de busca for limpo ou menos de 3 caracteres, habilita o cadastro de nova pessoa
                 sugestoes.style.display = "none";
+                resetPersonFieldsForNewEntry(); // Habilita campos para nova pessoa
             }
+        });
+
+        // Evento para o botão Limpar do formulário de atendimento
+        formulario.addEventListener('reset', () => {
+            // Limpa o campo de busca e reseta os campos da pessoa
+            campoBusca.value = "";
+            sugestoes.innerHTML = "";
+            sugestoes.style.display = "none";
+            resetPersonFieldsForNewEntry();
         });
 
         // Evento para enviar o formulário
@@ -119,42 +184,67 @@
             event.preventDefault();
 
             try {
-                const pessoaId = document.getElementById('pessoaId').value;
+                let pessoaId = pessoaIdInput.value;
+                const nome = nomeInput.value.trim();
                 const data = document.getElementById('data').value;
-                const hora = document.getElementById('hora').value; // Captura o valor do campo de hora
+                const hora = document.getElementById('hora').value;
                 const problema = document.getElementById('problema').value;
                 const solucao = document.getElementById('solucao').value;
                 const observacoes = document.getElementById('observacoes').value;
 
+                // Captura os valores dos campos de pessoa para um possível novo cadastro
+                const telefonePessoa = telefonePessoaInput ? telefonePessoaInput.value : "";
+                const contatoPessoa = contatoPessoaInput ? contatoPessoaInput.value : "";
+                const enderecoPessoa = enderecoPessoaInput ? enderecoPessoaInput.value : "";
+                const observacaoPessoa = observacaoPessoaInput ? observacaoPessoaInput.value : "";
+
+                // Se nenhuma pessoa foi selecionada da busca (pessoaId está vazio),
+                // significa que precisamos criar uma nova pessoa.
                 if (!pessoaId) {
-                    alert("Por favor, selecione uma pessoa antes de enviar o formulário.");
-                    return;
+                    if (!nome) {
+                        alert("Por favor, digite o nome da pessoa para um novo cadastro.");
+                        return;
+                    }
+
+                    const nextPersonId = await getNextPersonId(); // Pega o próximo ID sequencial para pessoas
+
+                    // Cria a nova pessoa com ID sequencial e todos os campos
+                    await db.collection("pessoas").doc(nextPersonId.toString()).set({
+                        id: nextPersonId, // O ID sequencial
+                        nome: nome,
+                        telefone: telefonePessoa,
+                        contato: contatoPessoa,
+                        endereco: enderecoPessoa,
+                        observacao: observacaoPessoa
+                    });
+                    pessoaId = nextPersonId.toString(); // Usa o ID sequencial como pessoaId para vincular o atendimento
+                    console.log("Nova pessoa cadastrada com ID sequencial:", pessoaId);
                 }
 
-                const nextId = await getNextId();
+                const nextAtendimentoId = await getNextAtendimentoId(); // Pega o próximo ID sequencial para atendimentos
 
-                await db.collection("atendimentos").doc(nextId.toString()).set({
-                    id: nextId,
-                    pessoaId: pessoaId, // Vincula o atendimento à pessoa selecionada
+                await db.collection("atendimentos").doc(nextAtendimentoId.toString()).set({
+                    id: nextAtendimentoId, // O ID sequencial do atendimento
+                    pessoaId: pessoaId,
                     data: data,
-                    hora: hora, // Adiciona o campo de hora ao documento
+                    hora: hora,
                     problema: problema,
                     solucao: solucao,
                     observacoes: observacoes
                 });
 
                 alert("Atendimento cadastrado com sucesso!");
-                formulario.reset();
-                document.getElementById('pessoaId').value = ""; // Limpa o ID da pessoa
-                document.getElementById('nome').value = ""; // Limpa o nome da pessoa
+                formulario.reset(); // Reseta os campos do formulário
+                resetPersonFieldsForNewEntry(); // Garante que os campos da pessoa sejam resetados e editáveis
+                campoBusca.value = ""; // Limpa o campo de busca
             } catch (error) {
                 console.error("Erro ao enviar dados: ", error);
                 alert("Erro ao enviar dados. Consulte o console.");
             }
         });
 
-        // Função para obter o próximo ID sequencial
-        async function getNextId() {
+        // Function to get the next sequential ID for 'atendimentos'
+        async function getNextAtendimentoId() {
             const counterRef = db.collection('counters').doc('atendimentos_counter');
 
             try {
@@ -168,11 +258,26 @@
                     return 1;
                 }
             } catch (error) {
-                console.error("Erro ao obter o próximo ID:", error);
+                console.error("Erro ao obter o próximo ID para atendimentos:", error);
                 throw error;
             }
         }
 
+        // Sidebar functions (already present)
+        function toggleMenu() {
+            var sidebar = document.getElementById("mySidebar");
+            sidebar.classList.toggle("active");
+        }
+
+        function closeMenu() {
+            var sidebar = document.getElementById("mySidebar");
+            sidebar.classList.remove("active");
+        }
+
+        // Inicializa os campos da pessoa como editáveis ao carregar a página
+        window.addEventListener('load', () => {
+            resetPersonFieldsForNewEntry();
+        });
     </script>
 </body>
 
