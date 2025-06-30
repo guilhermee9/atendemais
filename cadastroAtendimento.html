@@ -26,40 +26,36 @@
         <a href="cadastroAtendimento.html">Criar atendimento</a>
     </div>
 
-    <h2 class="section-title">Buscar Pessoa Existente</h2>
+
+    <h1 style="text-align: center;"></h1>
     <form id="buscaPessoa">
         <input type="text" id="campoBusca" placeholder="Buscar pessoa pelo nome..." autocomplete="off">
         <ul id="sugestoes"
             style="list-style: none; padding: 0; margin: 0; display: none; background-color: #fff; border: 1px solid #ccc; border-radius: 4px; max-height: 150px; overflow-y: auto;">
         </ul>
     </form>
-
-    <p class="textt-separator">ou</p> <br>
-
-    <h2 class="section-title">Dados do Atendimento</h2>
+    <br>
     <form id="formularioAtendimento">
-        <input type="hidden" id="pessoaId" name="pessoaId">
-        <input type="text" id="nome" name="nome" placeholder="Nome da Pessoa (para novo cadastro ou selecione acima)" required> 
+        <input type="hidden" id="pessoaId" name="pessoaId"> <!-- Campo oculto para armazenar o ID da pessoa -->
+        <input type="text" id="nome" name="nome" placeholder="Nome da Pessoa" readonly required>
         <input type="date" id="data" name="data" placeholder="Data" required>
-        <input type="time" id="hora" name="hora" placeholder="Hora" required>
+        <input type="time" id="hora" name="hora" placeholder="Hora" required> <!-- Novo campo para hora -->
         <textarea id="problema" name="problema" rows="4" required placeholder="Problema"></textarea>
         <textarea id="solucao" name="solucao" rows="4" placeholder="Solução"></textarea>
         <textarea id="observacoes" name="observacoes" rows="4" placeholder="Observações"></textarea>
-        <div class="button-container">
-            <button type="submit">Enviar</button>
-            <button type="reset">Limpar</button>
-        </div>
+        <button type="submit">Enviar</button>
+        <button type="reset">Limpar</button>
     </form>
 
-    <script type="module"> // Ensure this is type="module" to use firebase-config.js if it's modular
+
+    <script>
+
 
         const formulario = document.getElementById('formularioAtendimento');
         const campoBusca = document.getElementById('campoBusca');
         const sugestoes = document.getElementById('sugestoes');
-        const nomeInput = document.getElementById('nome'); // Get a reference to the nome input
-        const pessoaIdInput = document.getElementById('pessoaId'); // Get reference to hidden pessoaId
 
-        // Function to search for people in Firestore
+        // Função para buscar pessoas no Firestore
         async function buscarPessoas(nome) {
             try {
                 const querySnapshot = await db.collection("pessoas")
@@ -70,9 +66,10 @@
                 const resultados = [];
                 querySnapshot.forEach((doc) => {
                     const pessoa = doc.data();
-                    pessoa.id = doc.id; // Add the document ID to the person object
+                    pessoa.id = doc.id; // Adiciona o ID do documento ao objeto pessoa
                     resultados.push(pessoa);
                 });
+
                 return resultados;
             } catch (error) {
                 console.error("Erro ao buscar pessoas:", error);
@@ -80,14 +77,16 @@
             }
         }
 
-        // Event for typing in the search field
+        // Evento para capturar a digitação no campo de busca
         campoBusca.addEventListener('input', async (event) => {
             const valor = event.target.value.trim();
 
-            if (valor.length >= 3) { // Show suggestions only if there are at least 3 characters
+            // Exibe sugestões apenas se houver pelo menos 3 caracteres
+            if (valor.length >= 3) {
                 const resultados = await buscarPessoas(valor);
 
-                sugestoes.innerHTML = ""; // Clear previous suggestions
+                // Limpa as sugestões anteriores
+                sugestoes.innerHTML = "";
 
                 if (resultados.length > 0) {
                     resultados.forEach((pessoa) => {
@@ -96,70 +95,49 @@
                         item.style.padding = "10px";
                         item.style.cursor = "pointer";
 
-                        // Event to select the person and fill the hidden field
+                        // Evento para selecionar a pessoa e preencher o campo oculto
                         item.addEventListener('click', () => {
-                            pessoaIdInput.value = pessoa.id; // Store the person's ID
-                            nomeInput.value = pessoa.nome; // Fill the name in the form
-                            nomeInput.readOnly = true; // Make the name input read-only
+                            document.getElementById('pessoaId').value = pessoa.id; // Armazena o ID da pessoa
+                            document.getElementById('nome').value = pessoa.nome; // Preenche o nome no formulário
                             sugestoes.style.display = "none";
-                            campoBusca.value = ""; // Clear the search field after selection
                         });
+
                         sugestoes.appendChild(item);
                     });
+
                     sugestoes.style.display = "block";
                 } else {
                     sugestoes.style.display = "none";
                 }
             } else {
                 sugestoes.style.display = "none";
-                // If search field is cleared, revert nome input to editable and clear personaId
-                pessoaIdInput.value = "";
-                nomeInput.readOnly = false;
             }
         });
 
-        // Event for form submission
+        // Evento para enviar o formulário
         formulario.addEventListener('submit', async (event) => {
             event.preventDefault();
 
             try {
-                let pessoaId = pessoaIdInput.value;
-                const nome = nomeInput.value.trim();
+                const pessoaId = document.getElementById('pessoaId').value;
                 const data = document.getElementById('data').value;
-                const hora = document.getElementById('hora').value;
+                const hora = document.getElementById('hora').value; // Captura o valor do campo de hora
                 const problema = document.getElementById('problema').value;
                 const solucao = document.getElementById('solucao').value;
                 const observacoes = document.getElementById('observacoes').value;
 
-                // If no person was selected from suggestions (pessoaId is empty),
-                // it means we need to create a new person first.
                 if (!pessoaId) {
-                    if (!nome) {
-                        alert("Por favor, digite o nome da pessoa para um novo cadastro.");
-                        return;
-                    }
-                    
-                    // Here, you'd typically have a function to register a new person
-                    // For this example, we'll assume a simplified process:
-                    // Create a new person document and get its ID
-                    const newPersonRef = db.collection("pessoas").doc(); // Firestore auto-generates ID
-                    await newPersonRef.set({
-                        nome: nome,
-                        // Add other fields for new person if necessary (e.g., telefone, contato, etc.)
-                        // For a full new person registration, it might be better to direct them
-                        // to cadastroPessoa.html or open a modal for it.
-                    });
-                    pessoaId = newPersonRef.id; // Get the auto-generated ID for the new person
-                    console.log("Nova pessoa cadastrada com ID:", pessoaId);
+                    alert("Por favor, selecione uma pessoa antes de enviar o formulário.");
+                    return;
                 }
 
                 const nextId = await getNextId();
 
                 await db.collection("atendimentos").doc(nextId.toString()).set({
                     id: nextId,
-                    pessoaId: pessoaId,
+                    pessoaId: pessoaId, // Vincula o atendimento à pessoa selecionada
                     data: data,
-                    hora: hora,
+                    hora: hora, // Adiciona o campo de hora ao documento
                     problema: problema,
                     solucao: solucao,
                     observacoes: observacoes
@@ -167,17 +145,15 @@
 
                 alert("Atendimento cadastrado com sucesso!");
                 formulario.reset();
-                pessoaIdInput.value = ""; // Clear person ID
-                nomeInput.value = ""; // Clear name
-                nomeInput.readOnly = false; // Make name input editable again
-                campoBusca.value = ""; // Clear search field
+                document.getElementById('pessoaId').value = ""; // Limpa o ID da pessoa
+                document.getElementById('nome').value = ""; // Limpa o nome da pessoa
             } catch (error) {
                 console.error("Erro ao enviar dados: ", error);
                 alert("Erro ao enviar dados. Consulte o console.");
             }
         });
 
-        // Function to get the next sequential ID
+        // Função para obter o próximo ID sequencial
         async function getNextId() {
             const counterRef = db.collection('counters').doc('atendimentos_counter');
 
@@ -197,16 +173,6 @@
             }
         }
 
-        // Sidebar functions (already present in your original code)
-        function toggleMenu() {
-            var sidebar = document.getElementById("mySidebar");
-            sidebar.classList.toggle("active");
-        }
-
-        function closeMenu() {
-            var sidebar = document.getElementById("mySidebar");
-            sidebar.classList.remove("active");
-        }
     </script>
 </body>
 
