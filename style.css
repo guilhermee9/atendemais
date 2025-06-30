@@ -285,3 +285,16 @@ header h1 {
     font-weight: bold;
 
 }
+
+.section-title {
+    text-align: center;
+    font-size: 1.5rem;
+    /* Adjust as needed */
+    color: #054217;
+    /* Darker green for titles */
+    margin: 30px 0 15px 0;
+    /* Top, Right, Bottom, Left margins */
+    max-width: 80%;
+    margin-left: auto;
+    margin-right: auto;
+}
