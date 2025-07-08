@@ -1,2 +1,4 @@
 firebase-config.js
 .vscode/sftp.json
+package-lock.json
+package.json
