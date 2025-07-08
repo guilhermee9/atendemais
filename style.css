@@ -298,3 +298,83 @@ header h1 {
     margin-left: auto;
     margin-right: auto;
 }
+
+/* Classes para controlar a visibilidade dos campos adicionais */
+.hidden-fields {
+    display: none;
+}
+
+.visible-fields {
+    display: block;
+    /* Ou flex, dependendo do layout desejado para os campos */
+}
+
+/* Estilo para o botão pequeno (para o toggle) */
+.small-button {
+    background-color: #27ae60;
+    /* Mesma cor do botão principal */
+    color: white;
+    padding: 8px 15px;
+    /* Um pouco menor que o botão normal */
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    /* Fonte menor */
+    margin-top: 10px;
+    /* Espaçamento acima do botão */
+    margin-bottom: 20px;
+    /* Espaçamento abaixo do botão */
+}
+
+.small-button:hover {
+    background-color: #219150;
+    /* Mesma cor de hover do botão principal */
+}
+
+/* Ajuste para o .button-container para centralizar o novo botão também */
+.button-container {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    /* Espaço entre botões se houver mais de um no mesmo container */
+    flex-wrap: wrap;
+    /* Permite que os botões quebrem a linha em telas pequenas */
+}
+
+/* Garante que o .or-separator tenha a margem correta */
+.or-separator {
+    text-align: center;
+    margin: 20px auto;
+    /* Centraliza e adiciona margem vertical */
+    font-size: 20px;
+    color: #085c28;
+    font-weight: bold;
+    max-width: 80%;
+    /* Alinha com a largura dos formulários */
+}
+
+/* Estilo para os títulos das seções */
+.section-title {
+    text-align: center;
+    font-size: 1.5rem;
+    color: #054217;
+    margin: 30px 0 15px 0;
+    max-width: 80%;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Ajustes gerais de formulário para alinhamento */
+form {
+    max-width: 80%;
+    margin: 0 auto;
+    padding-bottom: 20px;
+    /* Adiciona um pouco de padding na parte inferior do formulário */
+}
+
+input,
+textarea {
+    margin-bottom: 15px;
+    /* Reduz a margem inferior para deixar os campos mais compactos */
+}

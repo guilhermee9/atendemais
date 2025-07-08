@@ -34,20 +34,30 @@
         </ul>
     </form>
 
-    <p class="textt-separator">ou</p>
-    <br>
+    <p class="or-separator">ou</p>
+
 
     <h2 class="section-title">Dados do Atendimento</h2>
     <form id="formularioAtendimento">
         <input type="hidden" id="pessoaId" name="pessoaId">
         <input type="text" id="nome" name="nome" placeholder="Nome da Pessoa (para novo cadastro ou selecione acima)"
             required>
-        <input type="tel" id="telefonePessoa" name="telefonePessoa" placeholder="Telefone da Nova Pessoa (opcional)">
-        <input type="text" id="contatoPessoa" name="contatoPessoa" placeholder="Contato da Nova Pessoa (opcional)">
-        <textarea id="enderecoPessoa" name="enderecoPessoa" rows="2"
-            placeholder="Endereço da Nova Pessoa (opcional)"></textarea>
-        <textarea id="observacaoPessoa" name="observacaoPessoa" rows="2"
-            placeholder="Observações da Nova Pessoa (opcional)"></textarea>
+
+        <div class="button-container">
+            <button type="button" id="togglePersonDetailsButton" class="small-button">Adicionar mais detalhes da
+                pessoa</button>
+        </div>
+
+        <div id="additionalPersonFields" class="hidden-fields">
+            <input type="tel" id="telefonePessoa" name="telefonePessoa"
+                placeholder="Telefone da Nova Pessoa (opcional)">
+            <input type="text" id="contatoPessoa" name="contatoPessoa" placeholder="Contato da Nova Pessoa (opcional)">
+            <textarea id="enderecoPessoa" name="enderecoPessoa" rows="2"
+                placeholder="Endereço da Nova Pessoa (opcional)"></textarea>
+            <textarea id="observacaoPessoa" name="observacaoPessoa" rows="2"
+                placeholder="Observações da Nova Pessoa (opcional)"></textarea>
+        </div>
+
         <input type="date" id="data" name="data" placeholder="Data" required>
         <input type="time" id="hora" name="hora" placeholder="Hora" required>
         <textarea id="problema" name="problema" rows="4" required placeholder="Problema"></textarea>
@@ -66,7 +76,11 @@
         const nomeInput = document.getElementById('nome');
         const pessoaIdInput = document.getElementById('pessoaId');
 
-        // Referências aos novos campos para cadastro de pessoa (se você os adicionou no HTML)
+        // Novos elementos para o toggle
+        const togglePersonDetailsButton = document.getElementById('togglePersonDetailsButton');
+        const additionalPersonFields = document.getElementById('additionalPersonFields');
+
+        // Referências aos novos campos para cadastro de pessoa
         const telefonePessoaInput = document.getElementById('telefonePessoa');
         const contatoPessoaInput = document.getElementById('contatoPessoa');
         const enderecoPessoaInput = document.getElementById('enderecoPessoa');
@@ -74,7 +88,7 @@
 
         // Função para obter o próximo ID sequencial para a coleção 'pessoas'
         async function getNextPersonId() {
-            const counterRef = db.collection('counters').doc('pessoas_counter'); // Contador específico para pessoas
+            const counterRef = db.collection('counters').doc('pessoas_counter');
 
             try {
                 const doc = await counterRef.get();
@@ -119,10 +133,15 @@
             nomeInput.value = "";
             nomeInput.readOnly = false; // Garante que o campo nome é editável
 
+            // Limpa e habilita os campos adicionais, mas mantém a visibilidade controlada pelo toggle
             if (telefonePessoaInput) { telefonePessoaInput.value = ""; telefonePessoaInput.readOnly = false; }
             if (contatoPessoaInput) { contatoPessoaInput.value = ""; contatoPessoaInput.readOnly = false; }
             if (enderecoPessoaInput) { enderecoPessoaInput.value = ""; enderecoPessoaInput.readOnly = false; }
             if (observacaoPessoaInput) { observacaoPessoaInput.value = ""; observacaoPessoaInput.readOnly = false; }
+
+            // Oculta os campos adicionais por padrão ao resetar para novo cadastro
+            additionalPersonFields.classList.add('hidden-fields');
+            togglePersonDetailsButton.textContent = "Adicionar mais detalhes da pessoa"; // Reseta o texto do botão
         }
 
         // Evento para capturar a digitação no campo de busca
@@ -144,15 +163,20 @@
                         item.addEventListener('click', () => {
                             pessoaIdInput.value = pessoa.id;
                             nomeInput.value = pessoa.nome;
-                            nomeInput.readOnly = true; // Torna o campo de nome somente leitura
-                            campoBusca.value = ""; // Limpa o campo de busca
+                            nomeInput.readOnly = true;
+                            campoBusca.value = "";
                             sugestoes.style.display = "none";
 
                             // Preencher campos de telefone, contato, etc. da pessoa existente
+                            // e EXIBIR os campos, tornando-os somente leitura
                             if (telefonePessoaInput) { telefonePessoaInput.value = pessoa.telefone || ""; telefonePessoaInput.readOnly = true; }
                             if (contatoPessoaInput) { contatoPessoaInput.value = pessoa.contato || ""; contatoPessoaInput.readOnly = true; }
                             if (enderecoPessoaInput) { enderecoPessoaInput.value = pessoa.endereco || ""; enderecoPessoaInput.readOnly = true; }
                             if (observacaoPessoaInput) { observacaoPessoaInput.value = pessoa.observacao || ""; observacaoPessoaInput.readOnly = true; }
+
+                            // Exibe os campos adicionais e ajusta o botão
+                            additionalPersonFields.classList.remove('hidden-fields');
+                            togglePersonDetailsButton.textContent = "Esconder detalhes da pessoa";
                         });
                         sugestoes.appendChild(item);
                     });
@@ -176,7 +200,7 @@
             campoBusca.value = "";
             sugestoes.innerHTML = "";
             sugestoes.style.display = "none";
-            resetPersonFieldsForNewEntry();
+            resetPersonFieldsForNewEntry(); // Usa a função para resetar os campos da pessoa
         });
 
         // Evento para enviar o formulário
@@ -193,6 +217,7 @@
                 const observacoes = document.getElementById('observacoes').value;
 
                 // Captura os valores dos campos de pessoa para um possível novo cadastro
+                // Eles serão capturados mesmo que o div esteja oculto, se tiverem valores.
                 const telefonePessoa = telefonePessoaInput ? telefonePessoaInput.value : "";
                 const contatoPessoa = contatoPessoaInput ? contatoPessoaInput.value : "";
                 const enderecoPessoa = enderecoPessoaInput ? enderecoPessoaInput.value : "";
@@ -206,25 +231,24 @@
                         return;
                     }
 
-                    const nextPersonId = await getNextPersonId(); // Pega o próximo ID sequencial para pessoas
+                    const nextPersonId = await getNextPersonId();
 
-                    // Cria a nova pessoa com ID sequencial e todos os campos
                     await db.collection("pessoas").doc(nextPersonId.toString()).set({
-                        id: nextPersonId, // O ID sequencial
+                        id: nextPersonId,
                         nome: nome,
                         telefone: telefonePessoa,
                         contato: contatoPessoa,
                         endereco: enderecoPessoa,
                         observacao: observacaoPessoa
                     });
-                    pessoaId = nextPersonId.toString(); // Usa o ID sequencial como pessoaId para vincular o atendimento
+                    pessoaId = nextPersonId.toString();
                     console.log("Nova pessoa cadastrada com ID sequencial:", pessoaId);
                 }
 
-                const nextAtendimentoId = await getNextAtendimentoId(); // Pega o próximo ID sequencial para atendimentos
+                const nextAtendimentoId = await getNextAtendimentoId();
 
                 await db.collection("atendimentos").doc(nextAtendimentoId.toString()).set({
-                    id: nextAtendimentoId, // O ID sequencial do atendimento
+                    id: nextAtendimentoId,
                     pessoaId: pessoaId,
                     data: data,
                     hora: hora,
@@ -234,7 +258,7 @@
                 });
 
                 alert("Atendimento cadastrado com sucesso!");
-                formulario.reset(); // Reseta os campos do formulário
+                formulario.reset();
                 resetPersonFieldsForNewEntry(); // Garante que os campos da pessoa sejam resetados e editáveis
                 campoBusca.value = ""; // Limpa o campo de busca
             } catch (error) {
@@ -263,7 +287,19 @@
             }
         }
 
-        // Sidebar functions (already present)
+        // Função para alternar a visibilidade dos campos adicionais da pessoa
+        togglePersonDetailsButton.addEventListener('click', () => {
+            if (additionalPersonFields.classList.contains('hidden-fields')) {
+                additionalPersonFields.classList.remove('hidden-fields');
+                togglePersonDetailsButton.textContent = "Esconder detalhes da pessoa";
+            } else {
+                additionalPersonFields.classList.add('hidden-fields');
+                togglePersonDetailsButton.textContent = "Adicionar mais detalhes da pessoa";
+            }
+        });
+
+
+        // Sidebar functions
         function toggleMenu() {
             var sidebar = document.getElementById("mySidebar");
             sidebar.classList.toggle("active");
@@ -274,7 +310,7 @@
             sidebar.classList.remove("active");
         }
 
-        // Inicializa os campos da pessoa como editáveis ao carregar a página
+        // Inicializa os campos da pessoa como editáveis e os campos adicionais ocultos ao carregar a página
         window.addEventListener('load', () => {
             resetPersonFieldsForNewEntry();
         });

@@ -19,9 +19,9 @@
     </header>
     <div class="sidebar" id="mySidebar">
         <a href="#" onclick="closeMenu()"><span class="menu-icon close-icon">&#9776;</span></a>
-        <a href="agenda.html">Agenda do dia</a>
+        <a href="agenda.html">Agenda</a>
         <a href="ordens.html">Ordens</a>
-        <a href="busca.html">Busca pessoa</a>
+        <a href="busca.html">Busca</a>
         <a href="cadastroPessoa.html">Pessoas</a>
         <a href="cadastroAtendimento.html">Criar atendimento</a>
     </div>
@@ -99,7 +99,7 @@
                         resultadoItem.innerHTML = `
                             <p><strong>📅 Data:</strong> ${dataFormatada || "Não informada"}</p>
                             <p><strong>⏰ Hora:</strong> ${atendimento.hora || "Não informada"}</p>
-                            <p><strong>👤 Pessoa:</strong> ${atendimento.nome || "Não associada"}</p>
+                            <p><strong>👤 Pessoa:</strong> ${atendimento.pessoaId || "Não associada"}</p>
                             <p><strong>🛠 Serviços/Produtos:</strong> ${atendimento.servicos || "Não informado"}</p>
                             <p><strong>💵 Preço:</strong> R$ ${atendimento.preco || "0,00"}</p>
                         `;
