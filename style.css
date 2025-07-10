@@ -378,3 +378,128 @@ textarea {
     margin-bottom: 15px;
     /* Reduz a margem inferior para deixar os campos mais compactos */
 }
+
+
+/* Estilos adicionais para os itens de visita e botões de ação */
+.visit-item {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 15px;
+    background-color: #ffffff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-bottom: 15px;
+}
+
+.visit-item p {
+    margin: 5px 0;
+    font-size: 14px;
+    color: #054217;
+}
+
+.visit-item strong {
+    font-weight: bold;
+}
+
+.visit-actions {
+    margin-top: 10px;
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+.visit-actions button {
+    padding: 8px 12px;
+    font-size: 14px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.visit-actions .convert-button {
+    background-color: #007e3f;
+    /* Verde mais escuro */
+    color: white;
+    border: none;
+}
+
+.visit-actions .convert-button:hover {
+    background-color: #005a2e;
+}
+
+.visit-actions .delete-button {
+    background-color: #e74c3c;
+    /* Vermelho */
+    color: white;
+    border: none;
+}
+
+.visit-actions .delete-button:hover {
+    background-color: #c0392b;
+}
+
+/* Estilo para visitas já processadas */
+.visit-processed {
+    background-color: #f0f0f0;
+    /* Fundo cinza claro */
+    opacity: 0.7;
+    /* Levemente transparente */
+    border-left: 5px solid #28a745;
+    /* Borda verde para indicar processado */
+}
+
+.visit-processed .visit-actions button {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+ /* Adicione estilos específicos para o chatbot aqui, se necessário */
+        #chatbot-container {
+            max-width: 80%;
+            margin: 20px auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            background-color: #fff;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        #chat-messages {
+            min-height: 100px;
+            border: 1px solid #eee;
+            padding: 10px;
+            margin-bottom: 15px;
+            overflow-y: auto;
+            max-height: 300px;
+        }
+
+        .chat-message {
+            margin-bottom: 10px;
+        }
+
+        .user-message {
+            text-align: right;
+            color: #007e3f;
+        }
+
+        .bot-message {
+            text-align: left;
+            color: #333;
+        }
+
+        .chat-input-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-input-group input,
+        .chat-input-group textarea {
+            flex-grow: 1;
+            margin-bottom: 0;
+            /* Override default form margin */
+        }
+
+        .chat-input-group button {
+            white-space: nowrap;
+        }

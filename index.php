@@ -20,14 +20,15 @@
 		<div class="menu-icon" onclick="toggleMenu()">&#9776;</div>
 		<h1>Agenda</h1>
 	</header>
-	<div class="sidebar" id="mySidebar">
-		<a href="#" onclick="closeMenu()"><span class="menu-icon close-icon">&#9776;</span></a>
-		<a href="agenda.html">Agenda do dia</a>
-		<a href="ordens.html">Ordens</a>
-		<a href="busca.html">Busca pessoa</a>
-		<a href="cadastroPessoa.html">Pessoas</a>
-		<a href="cadastroAtendimento.html">Criar atendimento</a>
-	</div>
+    <div class="sidebar" id="mySidebar">
+        <a href="#" onclick="closeMenu()"><span class="menu-icon close-icon">&#9776;</span></a>
+        <a href="agenda.html">Agenda do dia</a>
+        <a href="atendimentos.html">Atendimentos</a>
+        <a href="busca.html">Busca pessoa</a>
+        <a href="cadastroPessoa.html">Pessoas</a>
+        <a href="cadastroAtendimento.html">Criar atendimento</a>
+        <a href="verVisitas.html">Ver visitas</a>
+    </div>
 
 	<div class="sidebar" id="mySidebar">
 		<a href="#" onclick="closeMenu()"><span class="menu-icon close-icon">&#9776;</span></a>

@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Agende sua visita</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore-compat.js"></script>
+    <script src="js/firebase-config.js" defer></script>
+    <script src="js/main.js"></script>
+</head>
+
+<body>
+    <header>
+        <div class="menu-icon" onclick="toggleMenu()"></div>
+        <h1>Agende sua visita</h1>
+    </header>
+
+
+    <div id="chatbot-container">
+        <div id="chat-messages">
+        </div>
+        <div id="chatbot-input-area">
+            <p id="chatbot-prompt" style="font-weight: bold; margin-bottom: 10px;"></p>
+            <div class="chat-input-group">
+                <input type="text" id="chatbot-input" placeholder="Digite sua resposta..." autocomplete="off">
+                <input type="tel" id="chatbot-phone-input" placeholder="Seu telefone (apenas números)"
+                    style="display: none;">
+                <input type="date" id="chatbot-date-input" style="display: none;">
+                <input type="time" id="chatbot-time-input" style="display: none;">
+                <textarea id="chatbot-textarea" rows="3" maxlength="100"
+                    placeholder="Motivo da visita (até 100 caracteres)" style="display: none;"></textarea>
+                <button id="chatbot-send-btn">Enviar</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        const db = firebase.firestore();
+
+        const chatMessages = document.getElementById('chat-messages');
+        const chatbotPrompt = document.getElementById('chatbot-prompt');
+        const chatbotInput = document.getElementById('chatbot-input');
+        const chatbotPhoneInput = document.getElementById('chatbot-phone-input');
+        const chatbotDateInput = document.getElementById('chatbot-date-input');
+        const chatbotTimeInput = document.getElementById('chatbot-time-input');
+        const chatbotTextarea = document.getElementById('chatbot-textarea');
+        const chatbotSendBtn = document.getElementById('chatbot-send-btn');
+
+        let currentStep = 0;
+        let visitData = {};
+
+        const questions = [
+            { id: 'nome', prompt: "Olá! Para agendarmos sua visita, qual é o seu nome completo?", inputElement: chatbotInput, type: 'text' },
+            { id: 'telefone', prompt: "Ótimo! Agora, por favor, digite seu número de telefone (apenas números, com DDD):", inputElement: chatbotPhoneInput, type: 'tel' },
+            { id: 'endereco', prompt: "Certo! E qual é o endereço completo para a visita?", inputElement: chatbotInput, type: 'text' },
+            { id: 'dataDesejada', prompt: "Qual a data que você gostaria para a visita?", inputElement: chatbotDateInput, type: 'date' },
+            { id: 'horaDesejada', prompt: "E qual o horário desejado para a visita?", inputElement: chatbotTimeInput, type: 'time' },
+            { id: 'motivoVisita', prompt: "Por último, qual o principal motivo da visita? (Até 100 caracteres)", inputElement: chatbotTextarea, type: 'textarea' }
+        ];
+
+        function addMessage(sender, message) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('chat-message');
+            messageDiv.classList.add(sender === 'bot' ? 'bot-message' : 'user-message');
+            messageDiv.textContent = message;
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight; // Scroll to bottom
+        }
+
+        function showInput(type) {
+            chatbotInput.style.display = 'none';
+            chatbotPhoneInput.style.display = 'none';
+            chatbotDateInput.style.display = 'none';
+            chatbotTimeInput.style.display = 'none';
+            chatbotTextarea.style.display = 'none';
+
+            if (type === 'text') {
+                chatbotInput.style.display = 'block';
+                chatbotInput.focus();
+            } else if (type === 'tel') {
+                chatbotPhoneInput.style.display = 'block';
+                chatbotPhoneInput.focus();
+            } else if (type === 'date') {
+                chatbotDateInput.style.display = 'block';
+                chatbotDateInput.focus();
+            } else if (type === 'time') {
+                chatbotTimeInput.style.display = 'block';
+                chatbotTimeInput.focus();
+            } else if (type === 'textarea') {
+                chatbotTextarea.style.display = 'block';
+                chatbotTextarea.focus();
+            }
+        }
+
+        function askQuestion() {
+            if (currentStep < questions.length) {
+                const question = questions[currentStep];
+                chatbotPrompt.textContent = question.prompt;
+                showInput(question.type);
+                // Clear the current input field
+                if (question.inputElement) {
+                    question.inputElement.value = '';
+                }
+            } else {
+                submitVisit();
+            }
+        }
+
+        async function getNextVisitaId() {
+            const counterRef = db.collection('counters').doc('visitas_counter');
+            try {
+                const doc = await counterRef.get();
+                if (doc.exists) {
+                    const currentCount = doc.data().count;
+                    await counterRef.update({ count: currentCount + 1 });
+                    return currentCount + 1;
+                } else {
+                    await counterRef.set({ count: 1 });
+                    return 1;
+                }
+            } catch (error) {
+                console.error("Erro ao obter o próximo ID para visitas:", error);
+                throw error;
+            }
+        }
+
+        async function submitVisit() {
+            addMessage('bot', "Aguarde enquanto registramos sua visita...");
+            try {
+                const nextVisitaId = await getNextVisitaId();
+                visitData.idVisita = nextVisitaId;
+
+                await db.collection("visitas").doc(nextVisitaId.toString()).set(visitData);
+
+                addMessage('bot', "Sua visita foi agendada com sucesso! Agradecemos o seu contato.");
+                chatbotPrompt.textContent = "Visita agendada!";
+                chatbotSendBtn.style.display = 'none';
+                chatbotInput.style.display = 'none';
+                chatbotPhoneInput.style.display = 'none';
+                chatbotDateInput.style.display = 'none';
+                chatbotTimeInput.style.display = 'none';
+                chatbotTextarea.style.display = 'none';
+
+            } catch (error) {
+                console.error("Erro ao agendar a visita: ", error);
+                addMessage('bot', "Ocorreu um erro ao agendar sua visita. Por favor, tente novamente.");
+                chatbotPrompt.textContent = "Erro no agendamento.";
+            }
+        }
+
+        chatbotSendBtn.addEventListener('click', () => {
+            const currentQuestion = questions[currentStep];
+            let inputValue = currentQuestion.inputElement.value.trim();
+
+            if (inputValue === '') {
+                addMessage('bot', "Por favor, preencha esta informação para continuar.");
+                return;
+            }
+
+            // Specific validation for phone number
+            if (currentQuestion.id === 'telefone') {
+                inputValue = inputValue.replace(/\D/g, ''); // Remove non-digits
+                if (!/^\d{10,11}$/.test(inputValue)) { // Basic check for 10 or 11 digits
+                    addMessage('bot', "Por favor, insira um número de telefone válido com DDD (apenas números).");
+                    return;
+                }
+            }
+
+            // Specific validation for motivoVisita length
+            if (currentQuestion.id === 'motivoVisita') {
+                if (inputValue.length > 100) {
+                    addMessage('bot', "O motivo da visita não pode ter mais de 100 caracteres. Por favor, resuma.");
+                    return;
+                }
+            }
+
+            addMessage('user', inputValue);
+            visitData[currentQuestion.id] = inputValue;
+            currentStep++;
+            askQuestion();
+        });
+
+        // Initialize the chatbot
+        window.addEventListener('load', () => {
+            addMessage('bot', "Bem-vindo(a) ao nosso agendamento de visitas!");
+            askQuestion();
+        });
+
+        // Sidebar functions (from original files)
+        function toggleMenu() {
+            var sidebar = document.getElementById("mySidebar");
+            sidebar.classList.toggle("active");
+        }
+
+        function closeMenu() {
+            var sidebar = document.getElementById("mySidebar");
+            sidebar.classList.remove("active");
+        }
+    </script>
+</body>
+
+</html>

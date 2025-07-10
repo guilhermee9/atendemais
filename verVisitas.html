@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Visitas Agendadas</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore-compat.js"></script>
+    <script src="js/firebase-config.js" defer></script>
+    <link rel="stylesheet" href="style.css">
+   
+</head>
+
+<body>
+    <header>
+        <div class="menu-icon" onclick="toggleMenu()">&#9776;</div>
+        <h1>Visitas Agendadas</h1>
+    </header>
+    <div class="sidebar" id="mySidebar">
+        <a href="#" onclick="closeMenu()"><span class="menu-icon close-icon">&#9776;</span></a>
+        <a href="agenda.html">Agenda do dia</a>
+        <a href="atendimentos.html">Atendimentos</a>
+        <a href="busca.html">Busca pessoa</a>
+        <a href="cadastroPessoa.html">Pessoas</a>
+        <a href="cadastroAtendimento.html">Criar atendimento</a>
+        <a href="verVisitas.html">Ver visitas</a>
+    </div>
+
+    <script>
+        function toggleMenu() {
+            var sidebar = document.getElementById("mySidebar");
+            sidebar.classList.toggle("active");
+        }
+
+        function closeMenu() {
+            var sidebar = document.getElementById("mySidebar");
+            sidebar.classList.remove("active");
+        }
+    </script>
+    <br>
+    <br>
+
+    <div id="visitas-lista">
+    </div>
+
+    <div id="meuModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <div id="modal-detalhes"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Importe db do firebase-config.js (já está em defer no head)
+        // const db = firebase.firestore(); // Já deveria estar disponível globalmente se firebase-config.js carrega antes
+
+        const visitasListaDiv = document.getElementById('visitas-lista');
+        const modal = document.getElementById("meuModal");
+        const modalDetalhes = document.getElementById("modal-detalhes");
+        const span = document.getElementsByClassName("close")[0];
+
+        span.onclick = function () {
+            modal.style.display = "none";
+        }
+
+        window.onclick = function (event) {
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
+        }
+
+        // Função para obter o próximo ID sequencial para a coleção 'pessoas'
+        async function getNextPersonId() {
+            const counterRef = db.collection('counters').doc('pessoas_counter');
+            try {
+                const doc = await counterRef.get();
+                if (doc.exists) {
+                    const currentCount = doc.data().count;
+                    await counterRef.update({ count: currentCount + 1 });
+                    return currentCount + 1;
+                } else {
+                    await counterRef.set({ count: 1 });
+                    return 1;
+                }
+            } catch (error) {
+                console.error("Erro ao obter o próximo ID para pessoas:", error);
+                throw error;
+            }
+        }
+
+        // Função para obter o próximo ID sequencial para a coleção 'atendimentos'
+        async function getNextAtendimentoId() {
+            const counterRef = db.collection('counters').doc('atendimentos_counter');
+            try {
+                const doc = await counterRef.get();
+                if (doc.exists) {
+                    const currentCount = doc.data().count;
+                    await counterRef.update({ count: currentCount + 1 });
+                    return currentCount + 1;
+                } else {
+                    await counterRef.set({ count: 1 });
+                    return 1;
+                }
+            } catch (error) {
+                console.error("Erro ao obter o próximo ID para atendimentos:", error);
+                throw error;
+            }
+        }
+
+        async function buscarVisitas() {
+            visitasListaDiv.innerHTML = ""; // Limpa a lista antes de carregar
+            try {
+                const querySnapshot = await db.collection("visitas")
+                    .orderBy("dataDesejada", "desc") // Ordena pela data desejada
+                    .get();
+
+                if (querySnapshot.empty) {
+                    visitasListaDiv.innerHTML = "<p>Nenhuma visita agendada encontrada.</p>";
+                    return;
+                }
+
+                querySnapshot.forEach((doc) => {
+                    const visita = doc.data();
+                    const docId = doc.id; // O ID do documento no Firestore
+                    const isProcessed = visita.processada || false; // Adiciona um campo 'processada'
+
+                    const visitaItem = document.createElement('div');
+                    visitaItem.classList.add('visit-item');
+                    if (isProcessed) {
+                        visitaItem.classList.add('visit-processed');
+                    }
+                    visitaItem.innerHTML = `
+                        <p><strong>ID Visita:</strong> ${visita.idVisita || 'N/A'}</p>
+                        <p><strong>Nome:</strong> ${visita.nome || 'Não informado'}</p>
+                        <p><strong>Telefone:</strong> ${visita.telefone || 'Não informado'}</p>
+                        <p><strong>Endereço:</strong> ${visita.endereco || 'Não informado'}</p>
+                        <p><strong>Data Desejada:</strong> ${visita.dataDesejada ? new Date(visita.dataDesejada + 'T00:00:00').toLocaleDateString('pt-BR') : 'Não informada'}</p>
+                        <p><strong>Hora Desejada:</strong> ${visita.horaDesejada || 'Não informada'}</p>
+                        <p><strong>Motivo:</strong> ${visita.motivoVisita || 'Não informado'}</p>
+                        <div class="visit-actions">
+                            ${!isProcessed ? `<button class="convert-button" data-doc-id="${docId}">Converter em Atendimento</button>` : `<button class="convert-button" disabled>Já Processada</button>`}
+                            <button class="delete-button" data-doc-id="${docId}">Excluir Visita</button>
+                        </div>
+                    `;
+                    visitasListaDiv.appendChild(visitaItem);
+                });
+
+                // Adiciona listeners para os botões após renderizar
+                document.querySelectorAll('.convert-button').forEach(button => {
+                    button.addEventListener('click', async (event) => {
+                        const docId = event.target.dataset.docId;
+                        const visitRef = db.collection('visitas').doc(docId);
+                        const visitDoc = await visitRef.get();
+                        if (visitDoc.exists && !visitDoc.data().processada) {
+                            converterVisitaEmAtendimento(visitDoc);
+                        } else if (visitDoc.data().processada) {
+                            alert('Esta visita já foi processada.');
+                        }
+                    });
+                });
+
+                document.querySelectorAll('.delete-button').forEach(button => {
+                    button.addEventListener('click', async (event) => {
+                        const docId = event.target.dataset.docId;
+                        if (confirm('Tem certeza que deseja excluir esta visita?')) {
+                            await db.collection('visitas').doc(docId).delete();
+                            alert('Visita excluída com sucesso!');
+                            buscarVisitas(); // Recarrega a lista
+                        }
+                    });
+                });
+
+            } catch (error) {
+                console.error("Erro ao buscar visitas: ", error);
+                visitasListaDiv.innerHTML = "<p>Erro ao buscar visitas. Consulte o console.</p>";
+            }
+        }
+
+        async function converterVisitaEmAtendimento(visitaDoc) {
+            const visitaData = visitaDoc.data();
+            const visitaDocId = visitaDoc.id; // ID do documento da visita
+
+            try {
+                let pessoaId = null;
+
+                // 1. Validar/Buscar Pessoa por Telefone
+                const telefoneLimpo = (visitaData.telefone || '').replace(/\D/g, ''); // Limpa o telefone
+                if (telefoneLimpo) {
+                    const pessoaQuery = await db.collection('pessoas')
+                        .where('telefone', '==', telefoneLimpo)
+                        .limit(1)
+                        .get();
+
+                    if (!pessoaQuery.empty) {
+                        // Pessoa encontrada, usar o ID existente
+                        const pessoaExistente = pessoaQuery.docs[0];
+                        pessoaId = pessoaExistente.id;
+                        alert(`Pessoa já cadastrada (ID: ${pessoaId}). Usando cadastro existente.`);
+                    }
+                }
+
+                // 2. Se a pessoa não foi encontrada, cadastrar nova pessoa
+                if (!pessoaId) {
+                    const newPersonId = await getNextPersonId();
+                    pessoaId = newPersonId.toString(); // Converter para string para consistência
+
+                    await db.collection('pessoas').doc(pessoaId).set({
+                        id: newPersonId,
+                        nome: visitaData.nome || 'Nome não informado',
+                        telefone: visitaData.telefone || '',
+                        endereco: visitaData.endereco || '',
+                        contato: 'Visita Agendada Chatbot', // Pode preencher com algo padrão
+                        observacao: `Cadastrado via chatbot a partir da visita ID ${visitaData.idVisita || 'N/A'}`
+                    });
+                    alert(`Nova pessoa cadastrada com sucesso! ID: ${pessoaId}`);
+                }
+
+                // 3. Criar Novo Atendimento
+                const nextAtendimentoId = await getNextAtendimentoId();
+
+                await db.collection('atendimentos').doc(nextAtendimentoId.toString()).set({
+                    id: nextAtendimentoId,
+                    pessoaId: pessoaId,
+                    data: visitaData.dataDesejada, // Usar a data desejada da visita
+                    hora: visitaData.horaDesejada, // Usar a hora desejada da visita
+                    problema: `Visita Agendada: ${visitaData.motivoVisita || 'Motivo não especificado'}`,
+                    solucao: '', // Solução inicial vazia
+                    observacoes: `Visita original (ID: ${visitaData.idVisita || 'N/A'}) - Endereço: ${visitaData.endereco || ''}`
+                });
+
+                // 4. Marcar Visita como Processada (para não converter novamente)
+                await db.collection('visitas').doc(visitaDocId).update({
+                    processada: true,
+                    dataProcessamento: firebase.firestore.FieldValue.serverTimestamp() // Data/hora da conversão
+                });
+
+                alert('Visita convertida em Atendimento com sucesso!');
+                buscarVisitas(); // Recarrega a lista para refletir a mudança
+            } catch (error) {
+                console.error("Erro ao converter visita em atendimento:", error);
+                alert("Erro ao converter visita em atendimento. Consulte o console.");
+            }
+        }
+
+        // Carrega as visitas ao carregar a página
+        window.addEventListener('load', buscarVisitas);
+    </script>
+</body>
+
+</html>

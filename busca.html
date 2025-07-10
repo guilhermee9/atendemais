@@ -2,20 +2,205 @@
 <html>
 
 <head>
-    <title>Cadastros Serviços</title>
+    <title>Busca de Pessoas e Atendimentos</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore-compat.js"></script>
     <script src="js/firebase-config.js" defer></script>
     <link rel="stylesheet" href="style.css">
+    <style>
+        /* Estilos para a seção de detalhes da pessoa */
+        .person-details {
+            border: 1px solid #dcdcdc;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            background-color: #f9f9f9;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
 
+        .person-details h2 {
+            color: #007e3f;
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+
+        .person-details p {
+            margin: 5px 0;
+            color: #333;
+        }
+
+        /* Estilos para a lista de atendimentos (já deve existir no style.css, mas garantindo) */
+        .resultado-item {
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px;
+            background-color: #ffffff;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .resultado-item:hover {
+            transform: translateY(-3px);
+        }
+
+        .resultado-item p {
+            margin: 5px 0;
+            font-size: 14px;
+            color: #054217;
+        }
+
+        .resultado-item strong {
+            font-weight: bold;
+        }
+
+        .action {
+            text-align: right;
+            font-size: 12px;
+            color: #007e3f;
+            margin-top: 10px;
+        }
+
+        /* Estilos para sugestões de busca */
+        #sugestoes {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: none;
+            background-color: #fff;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            max-height: 150px;
+            overflow-y: auto;
+            position: absolute;
+            z-index: 1000;
+            width: calc(100% - 40px);
+            max-width: 500px;
+        }
+
+        #sugestoes li {
+            padding: 10px;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+        }
+
+        #sugestoes li:last-child {
+            border-bottom: none;
+        }
+
+        #sugestoes li:hover {
+            background-color: #f0f0f0;
+        }
+
+        /* Ajuste para o formulário de busca */
+        #buscaPessoaForm {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        #buscaPessoaForm input[type="text"] {
+            flex-grow: 1;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        #buscaPessoaForm button {
+            padding: 10px 15px;
+            background-color: #007e3f;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+        }
+
+        #buscaPessoaForm button:hover {
+            background-color: #005a2e;
+        }
+
+        /* Estilo para o box de listar todas as pessoas */
+        #allPeopleList {
+            margin-top: 30px;
+            padding: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            background-color: #ffffff;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            /* Removi o display: none; daqui para que carregue visível */
+        }
+
+        #allPeopleList h2 {
+            color: #007e3f;
+            margin-top: 0;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .person-card {
+            border: 1px solid #eee;
+            border-radius: 5px;
+            padding: 10px;
+            margin-bottom: 10px;
+            background-color: #fdfdfd;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+        .person-card:hover {
+            background-color: #f5f5f5;
+        }
+
+        .person-card p {
+            margin: 3px 0;
+            font-size: 14px;
+        }
+
+        .person-card strong {
+            color: #054217;
+        }
+
+        .list-all-button-container {
+            text-align: center;
+            margin-top: 20px;
+            display: none; /* Oculta este botão, pois a lista já carrega por padrão */
+        }
+        
+        /* Novo estilo para o botão "Voltar" */
+        .back-to-list-button {
+            background-color: #5cb85c; /* Um verde um pouco diferente */
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 20px;
+            margin-bottom: 20px; /* Adiciona margem para separação */
+            display: block; /* Para ocupar a largura e centralizar com margin: auto */
+            margin-left: auto;
+            margin-right: auto;
+            max-width: 200px; /* Limita a largura do botão */
+        }
+
+        .back-to-list-button:hover {
+            background-color: #4cae4c;
+        }
+    </style>
 </head>
 
 <body>
     <header>
         <div class="menu-icon" onclick="toggleMenu()">&#9776;</div>
-        <h1>Serviços</h1>
+        <h1>Busca de Pessoas e Atendimentos</h1>
     </header>
     <div class="sidebar" id="mySidebar">
         <a href="#" onclick="closeMenu()"><span class="menu-icon close-icon">&#9776;</span></a>
@@ -24,6 +209,7 @@
         <a href="busca.html">Busca pessoa</a>
         <a href="cadastroPessoa.html">Pessoas</a>
         <a href="cadastroAtendimento.html">Criar atendimento</a>
+        <a href="verVisitas.html">Ver visitas</a>
     </div>
 
     <script>
@@ -40,25 +226,39 @@
     <br>
     <br>
 
-    <!-- Adicione o campo de busca com auto-completar -->
-    <form id="buscaPessoa">
-        <input type="text" id="campoBusca" placeholder="Buscar pessoa pelo nome..." autocomplete="off">
-        <ul id="sugestoes"
-            style="list-style: none; padding: 0; margin: 0; display: none; background-color: #fff; border: 1px solid #ccc; border-radius: 4px; max-height: 150px; overflow-y: auto;">
-        </ul>
+    <form id="buscaPessoaForm">
+        <input type="text" id="campoBusca" placeholder="Buscar por nome ou telefone..." autocomplete="off">
+        <button type="submit">Buscar</button>
+        <ul id="sugestoes"></ul>
     </form>
     <br>
 
-    <div id="resultados"></div>
+    <div id="resultados">
+        </div>
+
+    <div id="allPeopleList">
+        <h2>Todas as Pessoas Cadastradas</h2>
+        <div id="peopleCardsContainer">
+            </div>
+    </div>
+
+
     <div id="meuModal" class="modal">
         <div class="modal-content">
             <span class="close">&times;</span>
             <div id="modal-detalhes"></div>
         </div>
     </div>
-    <script type="module">
 
+    <script type="module">
+        const db = firebase.firestore();
+
+        const buscaPessoaForm = document.getElementById('buscaPessoaForm');
+        const campoBusca = document.getElementById('campoBusca');
+        const sugestoes = document.getElementById('sugestoes');
         const resultadosDiv = document.getElementById('resultados');
+        const allPeopleListDiv = document.getElementById('allPeopleList');
+        const peopleCardsContainer = document.getElementById('peopleCardsContainer');
         const modal = document.getElementById("meuModal");
         const modalDetalhes = document.getElementById("modal-detalhes");
         const span = document.getElementsByClassName("close")[0];
@@ -73,107 +273,184 @@
             }
         }
 
-        function buscarAtendimentos() {
-            resultadosDiv.innerHTML = "";
+        // Função para buscar pessoas por nome (agora mais flexível para case-insensitive)
+        async function buscarPessoasPorNome(nome) {
+            try {
+                // Tenta buscar o nome exato (ou o que o Firestore considera "exato" com > e <)
+                // Para uma busca realmente case-insensitive no Firestore com LIKE,
+                // o ideal é ter um campo 'nomeLower' no seu banco de dados
+                // e buscar por ele: .where("nomeLower", ">=", nome.toLowerCase())...
+                // No entanto, para não alterar sua estrutura de dados agora,
+                // vamos buscar pelo nome original e filtrar no cliente se necessário.
+                // A query de Firestore é case-sensitive. Para contornar,
+                // faremos uma busca por "começa com" e "filtraremos" no JavaScript.
 
-            db.collection("atendimentos")
-                .orderBy("data", "desc") // Ordena pela data em ordem decrescente
-                .limit(10) // Limita a 10 resultados
-                .get()
-                .then((querySnapshot) => {
-                    if (querySnapshot.empty) {
-                        resultadosDiv.innerHTML = "<p>Nenhuma ordem encontrada.</p>";
-                        return;
+                const term = nome.toLowerCase(); // Converte o termo de busca para minúsculas
+
+                // Buscar todos os nomes que começam com o termo, ignorando maiúsculas/minúsculas no início
+                // Isso ainda é limitado pelo Firestore ser case-sensitive no .where
+                // Uma solução comum para true case-insensitive é usar uma função de nuvem para criar
+                // um campo 'nome_lowercase' no documento e buscar por ele.
+                // Ou, se os dados são pequenos, buscar tudo e filtrar, o que não é escalável.
+                // Para o seu caso, vamos tentar um "começa com" no lado do cliente.
+
+                const querySnapshot = await db.collection("pessoas")
+                    .orderBy("nome") // Orderna por nome para que a filtragem seja mais eficiente
+                    .startAt(nome) // Tenta pegar nomes que começam com o termo original (case-sensitive)
+                    .endAt(nome + '\uf8ff')
+                    .get();
+
+                const resultados = [];
+                querySnapshot.forEach((doc) => {
+                    const pessoa = doc.data();
+                    // Filtra no cliente para incluir resultados com diferentes capitalizações
+                    if (pessoa.nome && pessoa.nome.toLowerCase().startsWith(term)) {
+                        resultados.push({ id: doc.id, ...pessoa });
                     }
+                });
+                return resultados;
+            } catch (error) {
+                console.error("Erro ao buscar pessoas por nome:", error);
+                return [];
+            }
+        }
 
-                    querySnapshot.forEach((doc) => {
-                        const atendimento = doc.data();
-                        let dataFormatada = "";
+        // Função para buscar uma pessoa por telefone
+        async function buscarPessoaPorTelefone(telefone) {
+            const telefoneLimpo = telefone.replace(/\D/g, '');
+            if (!telefoneLimpo) return null;
 
-                        if (atendimento.data) {
-                            if (atendimento.data instanceof firebase.firestore.Timestamp) {
-                                dataFormatada = atendimento.data.toDate().toLocaleDateString('pt-BR');
-                            } else if (typeof atendimento.data === 'string') {
-                                try {
-                                    const dataObj = new Date(atendimento.data);
-                                    dataFormatada = dataObj.toLocaleDateString('pt-BR');
-                                } catch (error) {
-                                    console.error("Erro ao converter string para data:", error);
-                                    dataFormatada = "Data inválida";
+            try {
+                const querySnapshot = await db.collection("pessoas")
+                    .where("telefone", "==", telefoneLimpo)
+                    .limit(1)
+                    .get();
+
+                if (!querySnapshot.empty) {
+                    const doc = querySnapshot.docs[0];
+                    return { id: doc.id, ...doc.data() };
+                }
+                return null;
+            } catch (error) {
+                console.error("Erro ao buscar pessoa por telefone:", error);
+                return null;
+            }
+        }
+
+        // Função para criar o botão "Voltar" e adicioná-lo
+        function criarBotaoVoltar() {
+            let backButton = document.getElementById('backToListButton');
+            if (!backButton) {
+                backButton = document.createElement('button');
+                backButton.id = 'backToListButton';
+                backButton.classList.add('back-to-list-button');
+                backButton.textContent = 'Listar Todas as Pessoas';
+                backButton.addEventListener('click', () => {
+                    resultadosDiv.innerHTML = ""; // Limpa resultados da busca
+                    campoBusca.value = ""; // Limpa o campo de busca
+                    listarTodasAsPessoas(); // Volta a exibir a lista completa
+                });
+                resultadosDiv.appendChild(backButton);
+            }
+            backButton.style.display = 'block'; // Garante que o botão esteja visível
+        }
+
+        // Função principal para exibir detalhes da pessoa e seus atendimentos
+        async function exibirDetalhesPessoaEAtendimentos(pessoaId) {
+            resultadosDiv.innerHTML = ""; // Limpa resultados anteriores
+            sugestoes.style.display = "none"; // Esconde sugestões
+            allPeopleListDiv.style.display = 'none'; // Oculta a lista de todas as pessoas
+
+            try {
+                // Garante que pessoaId é uma string
+                const pessoaIdAsString = pessoaId.toString();
+                const pessoaDoc = await db.collection("pessoas").doc(pessoaIdAsString).get();
+
+                if (pessoaDoc.exists) {
+                    const pessoa = pessoaDoc.data();
+
+                    const personDetailsDiv = document.createElement('div');
+                    personDetailsDiv.classList.add('person-details');
+                    personDetailsDiv.innerHTML = `
+                        <h2>Detalhes da Pessoa</h2>
+                        <p><strong>Nome:</strong> ${pessoa.nome || "Não informado"}</p>
+                        <p><strong>Telefone:</strong> ${pessoa.telefone || "Não informado"}</p>
+                        <p><strong>Endereço:</strong> ${pessoa.endereco || "Não informado"}</p>
+                        <p><strong>Contato:</strong> ${pessoa.contato || "Não informado"}</p>
+                        <p><strong>Observação:</strong> ${pessoa.observacao || "Nenhuma"}</p>
+                    `;
+                    resultadosDiv.appendChild(personDetailsDiv);
+
+                    const atendimentosQuery = await db.collection("atendimentos")
+                        .where("pessoaId", "==", pessoaIdAsString)
+                        .orderBy("data", "desc")
+                        .get();
+
+                    if (atendimentosQuery.empty) {
+                        resultadosDiv.innerHTML += "<p style='text-align: center;'>Nenhum atendimento encontrado para esta pessoa.</p>";
+                    } else {
+                        const atendimentosHeader = document.createElement('h2');
+                        atendimentosHeader.textContent = "Atendimentos Relacionados";
+                        atendimentosHeader.style.color = "#007e3f";
+                        resultadosDiv.appendChild(atendimentosHeader);
+
+                        atendimentosQuery.forEach((doc) => {
+                            const atendimento = doc.data();
+                            let dataFormatada = "";
+
+                            if (atendimento.data) {
+                                if (atendimento.data instanceof firebase.firestore.Timestamp) {
+                                    dataFormatada = atendimento.data.toDate().toLocaleDateString('pt-BR');
+                                } else if (typeof atendimento.data === 'string') {
+                                    try {
+                                        const dataObj = new Date(atendimento.data);
+                                        dataFormatada = dataObj.toLocaleDateString('pt-BR');
+                                    } catch (error) {
+                                        console.error("Erro ao converter string para data:", error);
+                                        dataFormatada = "Data inválida";
+                                    }
+                                } else {
+                                    dataFormatada = "Formato de data desconhecido";
                                 }
-                            } else {
-                                dataFormatada = "Formato de data desconhecido";
                             }
-                        }
 
-                        // Busca o nome da pessoa na coleção "pessoas"
-                        if (atendimento.pessoaId && typeof atendimento.pessoaId === "string" && atendimento.pessoaId.trim() !== "") {
-                            db.collection("pessoas").doc(atendimento.pessoaId).get()
-                                .then((pessoaDoc) => {
-                                    const pessoaNome = pessoaDoc.exists ? pessoaDoc.data().nome : "Pessoa não encontrada";
-
-                                    const resultadoItem = document.createElement('div');
-                                    resultadoItem.classList.add('resultado-item');
-                                    resultadoItem.innerHTML = `
-                                        <p><strong>📅 Data:</strong> ${dataFormatada || "Não informada"}</p>
-                                        <p><strong>⏰ Hora:</strong> ${atendimento.hora || "Não informada"}</p>
-                                        <p><strong>👤 Pessoa:</strong> ${pessoaNome}</p>
-                                        <p><strong>🛠 Serviços/Produtos:</strong> ${atendimento.problema || "Não informado"}</p>
-                                        <div class="action">Ver mais detalhes</div>
-                                    `;
-
-                                    resultadoItem.addEventListener('click', () => {
-                                        exibirDetalhes(doc);
-                                    });
-
-                                    resultadosDiv.appendChild(resultadoItem);
-                                })
-                                .catch((error) => {
-                                    console.error("Erro ao buscar pessoa associada:", error);
-                                    resultadosDiv.innerHTML += `
-                                        <div class="resultado-item">
-                                            <p><strong>📅 Data:</strong> ${dataFormatada || "Não informada"}</p>
-                                            <p><strong>⏰ Hora:</strong> ${atendimento.hora || "Não informada"}</p>
-                                            <p><strong>👤 Pessoa:</strong> Erro ao buscar pessoa</p>
-                                            <p><strong>🛠 Serviços/Produtos:</strong> ${atendimento.servicos || "Não informado"}</p>
-                                            <p><strong>💵 Preço:</strong> R$ ${atendimento.preco || "0,00"}</p>
-                                        </div>
-                                    `;
-                                });
-                        } else {
                             const resultadoItem = document.createElement('div');
                             resultadoItem.classList.add('resultado-item');
                             resultadoItem.innerHTML = `
                                 <p><strong>📅 Data:</strong> ${dataFormatada || "Não informada"}</p>
                                 <p><strong>⏰ Hora:</strong> ${atendimento.hora || "Não informada"}</p>
-                                <p><strong>👤 Pessoa:</strong> Não associado a nenhuma pessoa</p>
-                                <p><strong>🛠 Serviços/Produtos:</strong> ${atendimento.problema || "Não informado"}</p>
-                                <p><strong>💵 Preço:</strong> R$ ${atendimento.preco || "0,00"}</p>
+                                <p><strong>🛠 Problema:</strong> ${atendimento.problema || "Não informado"}</p>
+                                <p><strong>✅ Solução:</strong> ${atendimento.solucao || "Não informada"}</p>
                                 <div class="action">Ver mais detalhes</div>
                             `;
 
                             resultadoItem.addEventListener('click', () => {
-                                exibirDetalhes(doc);
+                                exibirDetalhesAtendimentoModal(doc);
                             });
-
                             resultadosDiv.appendChild(resultadoItem);
-                        }
-                    });
-                })
-                .catch((error) => {
-                    console.error("Erro ao buscar ordens: ", error);
-                    resultadosDiv.innerHTML = "<p>Erro ao buscar ordens. Consulte o console.</p>";
-                });
+                        });
+                    }
+                    criarBotaoVoltar(); // Adiciona o botão voltar após exibir os resultados
+                } else {
+                    resultadosDiv.innerHTML = "<p style='text-align: center; color: #e74c3c;'>Pessoa não encontrada.</p>";
+                    criarBotaoVoltar(); // Adiciona o botão voltar mesmo se não encontrar
+                }
+            } catch (error) {
+                console.error("Erro ao exibir detalhes da pessoa e atendimentos:", error);
+                resultadosDiv.innerHTML = "<p style='text-align: center; color: #e74c3c;'>Erro ao buscar dados. Consulte o console.</p>";
+                criarBotaoVoltar(); // Adiciona o botão voltar em caso de erro
+            }
         }
 
-        function exibirDetalhes(doc) {
+        // Função para exibir detalhes de um atendimento no modal
+        function exibirDetalhesAtendimentoModal(doc) {
             const atendimento = doc.data();
             modalDetalhes.innerHTML = "";
 
             let dataFormatada = "";
             if (atendimento.data) {
                 if (atendimento.data instanceof firebase.firestore.Timestamp) {
-                    dataFormatada = atendimento.data.toDate().toLocaleDateString('pt-BR'); // Formatação para pt-BR (DD/MM/AAAA)
+                    dataFormatada = atendimento.data.toDate().toLocaleDateString('pt-BR');
                 } else if (typeof atendimento.data === 'string') {
                     try {
                         const dataObj = new Date(atendimento.data);
@@ -187,118 +464,59 @@
                 }
             }
 
-            // Verifica se há um `pessoaId` associado ao atendimento
+            let pessoaNome = "Não informado";
             if (atendimento.pessoaId) {
-                db.collection("pessoas").doc(atendimento.pessoaId).get()
-                    .then((pessoaDoc) => {
+                const pessoaIdAsString = atendimento.pessoaId.toString();
+                db.collection("pessoas").doc(pessoaIdAsString).get()
+                    .then(pessoaDoc => {
                         if (pessoaDoc.exists) {
-                            const pessoa = pessoaDoc.data();
-
-                            modalDetalhes.innerHTML = `                                
-                                <p><strong>Nome:</strong> ${pessoa.nome || "Não informado"}</p>
-                                <p><strong>Telefone:</strong> ${pessoa.telefone || "Não informado"}</p>
-                                <p><strong>Contato:</strong> ${pessoa.contato || "Não informado"}</p>
-                                <p><strong>Endereço:</strong> ${pessoa.endereco || "Não informado"}</p>
-                                <p><strong>Data:</strong> ${dataFormatada || "Não informada"}</p>
-                                <br>
-                                <p><strong>Problema:</strong> ${atendimento.problema || "Não informado"}</p>
-                                <p><strong>Solução:</strong> ${atendimento.solucao || "Não informada"}</p>
-                                <p><strong>Observações:</strong> ${atendimento.observacoes || "Não informadas"}</p>
-                            `;
-                        } else {
-                            modalDetalhes.innerHTML = `
-                                <p><strong>ID do documento:</strong> ${doc.id}</p>
-                                <p><strong>ID:</strong> ${atendimento.id || "Não informado"}</p>
-                                <p><strong>Nome:</strong> Pessoa não encontrada</p>
-                                <p><strong>Data:</strong> ${dataFormatada || "Não informada"}</p>
-                                <p><strong>Problema:</strong> ${atendimento.problema || "Não informado"}</p>
-                                <p><strong>Solução:</strong> ${atendimento.solucao || "Não informada"}</p>
-                                <p><strong>Observações:</strong> ${atendimento.observacoes || "Não informadas"}</p>
-                            `;
+                            pessoaNome = pessoaDoc.data().nome;
                         }
-
-                        modal.style.display = "block"; // Exibe o modal
+                        renderModalContent();
                     })
-                    .catch((error) => {
-                        console.error("Erro ao buscar pessoa associada:", error);
-                        modalDetalhes.innerHTML = `
-                            <p><strong>ID do documento:</strong> ${doc.id}</p>
-                            <p><strong>ID:</strong> ${atendimento.id || "Não informado"}</p>
-                            <p><strong>Nome:</strong> Erro ao buscar pessoa</p>
-                            <p><strong>Data:</strong> ${dataFormatada || "Não informada"}</p>
-                            <p><strong>Problema:</strong> ${atendimento.problema || "Não informado"}</p>
-                            <p><strong>Solução:</strong> ${atendimento.solucao || "Não informada"}</p>
-                            <p><strong>Observações:</strong> ${atendimento.observacoes || "Não informadas"}</p>
-                        `;
-                        modal.style.display = "block"; // Exibe o modal
+                    .catch(error => {
+                        console.error("Erro ao buscar pessoa para o modal:", error);
+                        renderModalContent();
                     });
             } else {
+                renderModalContent();
+            }
+
+            function renderModalContent() {
                 modalDetalhes.innerHTML = `
-                    <p><strong>ID do documento:</strong> ${doc.id}</p>
-                    <p><strong>ID:</strong> ${atendimento.id || "Não informado"}</p>
-                    <p><strong>Nome:</strong> Não associado a nenhuma pessoa</p>
+                    <p><strong>ID do Atendimento:</strong> ${atendimento.id || "Não informado"}</p>
+                    <p><strong>Pessoa:</strong> ${pessoaNome}</p>
                     <p><strong>Data:</strong> ${dataFormatada || "Não informada"}</p>
+                    <p><strong>Hora:</strong> ${atendimento.hora || "Não informada"}</p>
                     <p><strong>Problema:</strong> ${atendimento.problema || "Não informado"}</p>
                     <p><strong>Solução:</strong> ${atendimento.solucao || "Não informada"}</p>
                     <p><strong>Observações:</strong> ${atendimento.observacoes || "Não informadas"}</p>
                 `;
-                modal.style.display = "block"; // Exibe o modal
+                modal.style.display = "block";
             }
         }
 
-        window.addEventListener('load', buscarAtendimentos);
 
-        const campoBusca = document.getElementById('campoBusca');
-        const sugestoes = document.getElementById('sugestoes');
-
-        // Função para buscar pessoas no Firestore
-        async function buscarPessoas(nome) {
-            try {
-                const querySnapshot = await db.collection("pessoas")
-                    .where("nome", ">=", nome)
-                    .where("nome", "<=", nome + "\uf8ff")
-                    .get();
-
-                const resultados = [];
-                querySnapshot.forEach((doc) => {
-                    resultados.push({ id: doc.id, ...doc.data() });
-                });
-
-                return resultados;
-            } catch (error) {
-                console.error("Erro ao buscar pessoas:", error);
-                return [];
-            }
-        }
-
-        // Evento para capturar a digitação no campo de busca
+        // Evento para o autocomplete (digitação no campo de busca)
         campoBusca.addEventListener('input', async (event) => {
             const valor = event.target.value.trim();
+            sugestoes.innerHTML = "";
 
-            // Exibe sugestões apenas se houver pelo menos 3 caracteres
-            if (valor.length >= 3) {
-                const resultados = await buscarPessoas(valor);
-
-                // Limpa as sugestões anteriores
-                sugestoes.innerHTML = "";
+            if (valor.length >= 2) { // Reduzido para 2 caracteres para iniciar sugestões mais cedo
+                // O autocomplete continua focado em nomes e busca mais abrangente
+                const resultados = await buscarPessoasPorNome(valor);
 
                 if (resultados.length > 0) {
                     resultados.forEach((pessoa) => {
                         const item = document.createElement('li');
-                        item.textContent = pessoa.nome;
-                        item.style.padding = "10px";
-                        item.style.cursor = "pointer";
-
-                        // Evento para buscar atendimentos ao clicar em uma sugestão
+                        item.textContent = `${pessoa.nome} (${pessoa.telefone || 'Sem telefone'})`;
                         item.addEventListener('click', () => {
-                            buscarAtendimentosPorPessoa(pessoa.id);
-                            sugestoes.style.display = "none";
                             campoBusca.value = pessoa.nome;
+                            exibirDetalhesPessoaEAtendimentos(pessoa.id);
+                            sugestoes.style.display = "none";
                         });
-
                         sugestoes.appendChild(item);
                     });
-
                     sugestoes.style.display = "block";
                 } else {
                     sugestoes.style.display = "none";
@@ -308,69 +526,119 @@
             }
         });
 
-        // Função para buscar atendimentos por pessoa
-        async function buscarAtendimentosPorPessoa(pessoaId) {
+        // Evento para o formulário de busca (clique no botão "Buscar" ou Enter)
+        buscaPessoaForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const valorBusca = campoBusca.value.trim();
+            resultadosDiv.innerHTML = ""; // Limpa resultados anteriores
+            sugestoes.style.display = "none"; // Esconde sugestões
+            allPeopleListDiv.style.display = 'none'; // Oculta a lista de todas as pessoas
 
-            resultadosDiv.innerHTML = "";
+            if (!valorBusca) {
+                // Se o campo estiver vazio, volta para a lista de todas as pessoas
+                resultadosDiv.innerHTML = "<p style='text-align: center; color: #666;'>Digite um nome ou telefone e clique em 'Buscar' para encontrar uma pessoa e seus atendimentos.</p>";
+                listarTodasAsPessoas(); // Volta a exibir a lista completa
+                return;
+            }
+
+            const isPhoneNumberSearch = /^\d+$/.test(valorBusca) && valorBusca.length >= 8;
+
+            let pessoaEncontrada = null;
+            let pessoasEncontradasPorNome = [];
+
+            if (isPhoneNumberSearch) {
+                pessoaEncontrada = await buscarPessoaPorTelefone(valorBusca);
+            }
+
+            if (!pessoaEncontrada) {
+                // Se não encontrou por telefone ou não era um telefone, busca por nome
+                pessoasEncontradasPorNome = await buscarPessoasPorNome(valorBusca);
+
+                if (pessoasEncontradasPorNome.length > 0) {
+                    if (pessoasEncontradasPorNome.length === 1) {
+                        pessoaEncontrada = pessoasEncontradasPorNome[0];
+                    } else {
+                        // Múltiplas pessoas por nome: exibe lista para escolha
+                        resultadosDiv.innerHTML = `<h2>Múltiplas Pessoas Encontradas com "${valorBusca}"</h2>`;
+                        pessoasEncontradasPorNome.forEach(p => {
+                            const personCard = document.createElement('div');
+                            personCard.classList.add('person-card');
+                            personCard.innerHTML = `
+                                <p><strong>Nome:</strong> ${p.nome || "Não informado"}</p>
+                                <p><strong>Telefone:</strong> ${p.telefone || "Não informado"}</p>
+                                <p><strong>Endereço:</strong> ${p.endereco || "Não informado"}</p>
+                            `;
+                            personCard.addEventListener('click', () => {
+                                exibirDetalhesPessoaEAtendimentos(p.id);
+                            });
+                            resultadosDiv.appendChild(personCard);
+                        });
+                        criarBotaoVoltar(); // Adiciona o botão voltar aqui
+                        return;
+                    }
+                }
+            }
+
+            if (pessoaEncontrada) {
+                exibirDetalhesPessoaEAtendimentos(pessoaEncontrada.id);
+            } else {
+                resultadosDiv.innerHTML = "<p style='text-align: center; color: #e74c3c;'>Nenhuma pessoa encontrada com o nome ou telefone fornecido.</p>";
+                criarBotaoVoltar(); // Adiciona o botão voltar
+            }
+        });
+
+        // Opcional: Limpar sugestões quando o campo perde o foco
+        campoBusca.addEventListener('blur', () => {
+            setTimeout(() => {
+                sugestoes.style.display = "none";
+            }, 100);
+        });
+
+
+        // FUNÇÃO PARA LISTAR TODAS AS PESSOAS
+        async function listarTodasAsPessoas() {
+            peopleCardsContainer.innerHTML = ""; // Limpa a lista anterior
+            resultadosDiv.innerHTML = ""; // Limpa os resultados de busca única
+            allPeopleListDiv.style.display = 'block'; // Exibe o box de todas as pessoas
+            
+            // Oculta o botão "Voltar" se ele existir, pois já estamos na lista principal
+            const backButton = document.getElementById('backToListButton');
+            if(backButton) {
+                backButton.style.display = 'none';
+            }
 
             try {
-                // Certifique-se de que o pessoaId é uma string
-                const pessoaIdString = pessoaId.toString();
-
-                // Consulta ordenada por data (mais recente primeiro)
-                const querySnapshot = await db.collection("atendimentos")
-                    .where("pessoaId", "==", pessoaIdString)
-                    .orderBy("data", "desc") // Ordena pela data em ordem decrescente
-                    .get();
+                const querySnapshot = await db.collection("pessoas").orderBy("nome").get();
 
                 if (querySnapshot.empty) {
-
-                    resultadosDiv.innerHTML = "<p>Nenhum atendimento encontrado para esta pessoa.</p>";
+                    peopleCardsContainer.innerHTML = "<p style='text-align: center;'>Nenhuma pessoa cadastrada.</p>";
                     return;
                 }
 
                 querySnapshot.forEach((doc) => {
-                    const atendimento = doc.data();
-
-                    let dataFormatada = "";
-
-                    if (atendimento.data) {
-                        if (atendimento.data instanceof firebase.firestore.Timestamp) {
-                            dataFormatada = atendimento.data.toDate().toLocaleDateString('pt-BR');
-                        } else if (typeof atendimento.data === 'string') {
-                            try {
-                                const dataObj = new Date(atendimento.data);
-                                dataFormatada = dataObj.toLocaleDateString('pt-BR');
-                            } catch (error) {
-                                console.error("Erro ao converter string para data:", error);
-                                dataFormatada = "Data inválida";
-                            }
-                        } else {
-                            dataFormatada = "Formato de data desconhecido";
-                        }
-                    }
-
-                    const resultadoItem = document.createElement('div');
-                    resultadoItem.classList.add('resultado-item');
-                    resultadoItem.innerHTML = `
-                        <p><strong>📅 Data:</strong> ${dataFormatada || "Não informada"}</p>
-                        <p><strong>⏰ Hora:</strong> ${atendimento.hora || "Não informada"}</p>
-                        <p><strong>🛠 Serviços/Produtos:</strong> ${atendimento.servicos || "Não informado"}</p>
-                        <p><strong>💵 Preço:</strong> R$ ${atendimento.preco || "0,00"}</p>
-                        <div class="action">Ver mais detalhes</div>
+                    const pessoa = doc.data();
+                    const personCard = document.createElement('div');
+                    personCard.classList.add('person-card');
+                    personCard.innerHTML = `
+                        <p><strong>Nome:</strong> ${pessoa.nome || "Não informado"}</p>
+                        <p><strong>Telefone:</strong> ${pessoa.telefone || "Não informado"}</p>
+                        <p><strong>Endereço:</strong> ${pessoa.endereco || "Não informado"}</p>
                     `;
-
-                    resultadoItem.addEventListener('click', () => {
-                        exibirDetalhes(doc);
+                    personCard.addEventListener('click', () => {
+                        exibirDetalhesPessoaEAtendimentos(doc.id);
                     });
-
-                    resultadosDiv.appendChild(resultadoItem);
+                    peopleCardsContainer.appendChild(personCard);
                 });
+
             } catch (error) {
-                console.error("Erro ao buscar atendimentos por pessoa:", error);
-                resultadosDiv.innerHTML = "<p>Erro ao buscar atendimentos. Consulte o console.</p>";
+                console.error("Erro ao listar todas as pessoas:", error);
+                peopleCardsContainer.innerHTML = "<p style='text-align: center; color: #e74c3c;'>Erro ao carregar lista de pessoas.</p>";
             }
         }
+
+        // Ao carregar a página, lista todas as pessoas por padrão
+        window.addEventListener('load', listarTodasAsPessoas);
+
     </script>
 
 </body>
